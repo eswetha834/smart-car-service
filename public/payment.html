@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payment Page</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #eef2f7; }
+  .container { max-width: 700px; margin: auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.12);}
+  h2 { text-align: center; color: #333; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  table, th, td { border: 1px solid #ccc; }
+  th, td { padding: 12px; text-align: left; }
+  th { background-color: #007bff; color: #fff; }
+  td.amount { text-align: right; font-weight: bold; }
+  #proceedBtn, #submitBtn { width: 100%; padding: 15px; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+  #proceedBtn { background-color: #28a745; }
+  #proceedBtn:hover { background-color: #218838; }
+  #submitBtn { background-color: #007bff; }
+  #submitBtn:hover { background-color: #0056b3; }
+  #codAmount { text-align: center; font-size: 18px; font-weight: bold; margin-top: 10px; color: #333; }
+  #message { margin-top: 10px; color: red; text-align: center; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Payment Details</h2>
+  <table>
+    <tr>
+      <th>Item</th>
+      <th>Details</th>
+      <th>Amount (₹)</th>
+    </tr>
+    <tr>
+      <td>Car Model</td>
+      <td id="carModel"></td>
+      <td id="carAmount" class="amount"></td>
+    </tr>
+    <tr>
+      <td>Service Type</td>
+      <td id="serviceType"></td>
+      <td id="serviceAmount" class="amount"></td>
+    </tr>
+    <tr>
+      <td>Date</td>
+      <td id="date"></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Payment Method</td>
+      <td id="paymentMethod"></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <th colspan="2">Total Amount</th>
+      <th id="totalAmount" class="amount"></th>
+    </tr>
+  </table>
+
+  <div id="codAmount" style="display:none;"></div>
+
+  <button id="proceedBtn">Proceed to Pay</button>
+  <button id="submitBtn" style="display:none;">Confirm Booking (COD)</button>
+  <div id="message"></div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+// Get booking data from localStorage
+const bookingData = JSON.parse(localStorage.getItem("bookingData") || "{}");
+if(!bookingData.customerName){ 
+  alert("No booking data found!"); 
+  window.location.href="booking.html"; 
+}
+
+// Amount mapping
+const carAmount = bookingData.totalAmount - (bookingData.serviceAmount || 0); // Use your total
+const serviceAmount = bookingData.serviceAmount || 0;
+const totalAmount = bookingData.totalAmount;
+
+// Fill table
+document.getElementById("carModel").innerText = bookingData.carModel;
+document.getElementById("serviceType").innerText = bookingData.serviceType;
+document.getElementById("date").innerText = bookingData.date;
+document.getElementById("paymentMethod").innerText = bookingData.paymentMethod;
+document.getElementById("carAmount").innerText = carAmount;
+document.getElementById("serviceAmount").innerText = serviceAmount;
+document.getElementById("totalAmount").innerText = totalAmount;
+
+// Show COD button if payment method is Cash on Delivery
+if(bookingData.paymentMethod === "cod"){
+  document.getElementById("codAmount").style.display = "block";
+  document.getElementById("codAmount").innerText = `Pay ₹${totalAmount} on delivery`;
+  document.getElementById("submitBtn").style.display = "block";
+  document.getElementById("proceedBtn").style.display = "none";
+}
+
+// Proceed to online payment
+document.getElementById("proceedBtn").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/bookings/pay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...bookingData, amount: totalAmount })
+    });
+    const result = await res.json();
+    if(!result.success){ 
+      document.getElementById("message").innerText = result.message || "Payment error"; 
+      return; 
+    }
+
+    if(bookingData.paymentMethod === "razorpay"){
+      const options = {
+        key: result.key,
+        amount: result.amount * 100, // paise
+        currency: "INR",
+        name: "Smart Car Service",
+        description: "Service Booking",
+        order_id: result.orderId,
+        handler: function(response){
+          alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+          window.location.href = "success.html";
+        }
+      };
+      new Razorpay(options).open();
+
+    } else if(bookingData.paymentMethod === "paypal"){
+      // Redirect to PayPal checkout page from backend
+      window.location.href = result.paypalUrl;
+
+    } 
+  } catch(err){
+    console.error(err); 
+    document.getElementById("message").innerText="Server error";
+  }
+});
+
+// COD Booking
+document.getElementById("submitBtn").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/bookings", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ ...bookingData, amount: totalAmount })
+    });
+    const result = await res.json();
+    if(result.success){
+      alert(`Booking confirmed! Pay ₹${totalAmount} on delivery.`);
+      window.location.href = "success.html";
+    } else {
+      document.getElementById("message").innerText = result.message || "Booking error";
+    }
+  } catch(err){
+    console.error(err); 
+    document.getElementById("message").innerText="Server error";
+  }
+});
+</script>
+</body>
+</html>

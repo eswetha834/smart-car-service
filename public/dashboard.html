@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Dashboard - Smart Car Service</title>
+<style>
+  body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
+  .sidebar { width:220px; background:#007bff; color:#fff; height:100vh; position:fixed; top:0; left:0; padding-top:20px; }
+  .sidebar h2 { text-align:center; margin-bottom:30px; }
+  .sidebar a { display:block; color:#fff; padding:15px 20px; text-decoration:none; margin:5px 0; border-radius:5px; cursor:pointer; }
+  .sidebar a:hover { background:#0056b3; }
+  .main { margin-left:240px; padding:20px; transition:0.3s; }
+  .card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 6px 18px rgba(0,0,0,0.1); }
+  .card h3 { margin-top:0; color:#007bff; }
+  table { width:100%; border-collapse:collapse; margin-top:20px; }
+  th, td { padding:12px; border:1px solid #ccc; text-align:center; }
+  th { background-color:#007bff; color:#fff; }
+  tr:nth-child(even){ background:#f2f2f2; }
+  .status { font-weight:bold; }
+  .pending { color:#ff4d4d; }
+  .completed { color:#28a745; }
+  .message-box { background:#fff3cd; padding:8px 12px; margin:5px 0; border-left:5px solid #ffc107; border-radius:5px; text-align:left; }
+  .hidden { display:none; }
+  .offers, .reviews { display:flex; gap:20px; flex-wrap:wrap; }
+  .offer-card, .review-card { flex:1 1 200px; background:#f1f5f9; padding:15px; border-radius:10px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+  .offer-card h4, .review-card h4 { margin:10px 0; color:#007bff; }
+  .loyalty { background: linear-gradient(90deg,#ff9a9e,#fad0c4); padding:15px; border-radius:10px; text-align:center; margin-bottom:20px; color:#fff; font-weight:bold; }
+  footer { text-align:center; margin-top:30px; padding:10px; background:#f4f6f9; color:#333; font-size:0.9em; border-top:1px solid #ccc; }
+  .button { padding:8px 12px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+  .button:hover { background:#0056b3; }
+  #loyaltyProgress { width: 100%; background:#ddd; border-radius:8px; margin-top:5px; }
+  #loyaltyProgressBar { width:0%; height:20px; background:#28a745; border-radius:8px; text-align:center; color:#fff; line-height:20px; }
+  #reviewOverlay {
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+    display:flex; justify-content:center; align-items:center; z-index:9999; display:none;
+  }
+  #reviewOverlay .card { width:400px; padding:20px; background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.2); position:relative; }
+  #reviewOverlay .closeBtn {
+    position:absolute; top:10px; right:10px; background:#ff4d4d; color:#fff; border:none; border-radius:50%;
+    width:25px; height:25px; cursor:pointer; font-weight:bold;
+  }
+  #recentReview { margin-bottom:20px; padding:15px; background:#f1f5f9; border-radius:10px; }
+  .review-box { background:#f1f5f9; padding:10px; border-radius:8px; margin-top:5px; }
+  .star { color: gold; font-size: 1.1em; }
+  #liveClock { font-size:0.9em; color:#555; float:right; }
+  .notification { position:fixed; top:15px; right:20px; background:#ffc107; color:#000; padding:10px 15px; border-radius:8px; display:none; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:0.3s; }
+  input[type="file"] { display:inline-block; }
+  .profile-actions { margin-top:10px; display:flex; gap:10px; align-items:center; }
+  .small-note { font-size:0.85em; color:#666; margin-top:8px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Smart Car Service</h2>
+  <a id="homeLink">Home</a>
+  <a id="profileLink">Profile</a>
+  <a id="myBookingsLink">My Bookings</a>
+  <a id="loyaltyLink">Loyalty</a>
+  <a id="adminMsgLink">Admin Messages</a>
+  <a id="offersLink">Offers</a>
+  <a id="reviewsLink">Customer Reviews</a>
+  <a id="analyticsLink">Analytics</a>
+  <a href="booking.html">Book Service</a>
+  <a id="logoutBtn">Logout</a>
+</div>
+
+<div class="main">
+  <div id="homeSection" class="card">
+    <h3>Welcome to Smart Car Service</h3>
+    <div id="userLatestReview" class="card hidden"></div>
+  </div>
+
+  <div id="profileSection" class="card hidden">
+    <h3>My Profile</h3>
+    <!-- Profile image uses server value when available -->
+    <img id="profilePic" src="/images/default-avatar.png" alt="Profile Picture" width="120" style="border-radius:50%;"><br><br>
+    <div class="profile-actions">
+      <!-- Only accept images -->
+      <input type="file" id="profilePicInput" accept="image/*">
+      <button class="button" id="uploadPicBtn">Upload</button>
+      <button class="button" id="removePicBtn" style="background:#6c757d;">Remove</button>
+    </div>
+    <div class="small-note">Allowed: JPG, PNG, GIF. Max size depends on server config.</div>
+    <div id="profileInfo"></div>
+  </div>
+
+  <div id="bookingsSection" class="card hidden">
+    <h3>My Bookings</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Car Model</th>
+          <th>Service Type</th>
+          <th>Date</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>Review</th>
+        </tr>
+      </thead>
+      <tbody id="bookingTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="loyaltySection" class="card hidden">
+    <h3>Loyalty Points</h3>
+    <div class="loyalty">
+      <span id="loyaltyDisplay">0</span> points collected!
+      <div id="loyaltyProgress"><div id="loyaltyProgressBar">0%</div></div>
+      <p id="nextRewardText"></p>
+    </div>
+  </div>
+
+  <div id="adminMsgSection" class="card hidden"><h3>Admin Messages</h3><div id="adminMessages"></div></div>
+  <div id="offersSection" class="card hidden"><h3>Current Offers</h3><div class="offers" id="offersContainer"></div></div>
+  <div id="reviewsSection" class="card hidden"><h3>Customer Reviews</h3><div class="reviews" id="reviewsContainer"></div></div>
+
+  <div id="analyticsSection" class="card hidden">
+    <h3>Booking Analytics</h3>
+    <!-- Controls: Weekly / Monthly / Yearly -->
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+      <label for="analyticsRange">Range:</label>
+      <select id="analyticsRange">
+        <option value="weekly">Weekly</option>
+        <option value="monthly" selected>Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+      <button class="button" id="refreshAnalyticsBtn">Refresh</button>
+    </div>
+
+    <canvas id="revenueChart" style="max-height:300px;"></canvas>
+    <canvas id="serviceStatusChart" style="max-height:300px; margin-top:20px;"></canvas>
+    <canvas id="topServicesChart" style="max-height:300px; margin-top:20px;"></canvas>
+  </div>
+
+  <h3>Welcome to Smart Car Service <span id="liveClock"></span></h3>
+  <div class="notification" id="notificationBox">You have new alerts!</div>
+</div>
+
+<div id="reviewOverlay">
+  <div class="card">
+    <button class="closeBtn" id="closeReviewBtn">×</button>
+    <div id="overlayContent"></div>
+  </div>
+</div>
+
+<footer>&copy; 2025 Smart Car Service. All rights reserved.</footer>
+
+<script>
+const token = localStorage.getItem("token");
+if(!token){ alert("Please login first!"); window.location.href="/login.html"; }
+
+let canNavigate=false;
+const sections={
+  home:document.getElementById("homeSection"),
+  profile:document.getElementById("profileSection"),
+  bookings:document.getElementById("bookingsSection"),
+  loyalty:document.getElementById("loyaltySection"),
+  admin:document.getElementById("adminMsgSection"),
+  offers:document.getElementById("offersSection"),
+  reviews:document.getElementById("reviewsSection"),
+  analytics:document.getElementById("analyticsSection")
+};
+
+function hideAllSections(){ Object.values(sections).forEach(s=>s.classList.add("hidden")); }
+function safeNav(fn){ if(canNavigate) fn(); else alert("Please submit your last service review first."); }
+
+document.getElementById("homeLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.home.classList.remove("hidden"); });
+document.getElementById("profileLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.profile.classList.remove("hidden"); fetchUserProfile(); });
+document.getElementById("myBookingsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.bookings.classList.remove("hidden"); fetchUserBookings(); });
+document.getElementById("loyaltyLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.loyalty.classList.remove("hidden"); fetchUserProfile(); });
+document.getElementById("adminMsgLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.admin.classList.remove("hidden"); fetchAdminMessages(); });
+document.getElementById("offersLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.offers.classList.remove("hidden"); displayOffers(sampleOffers); });
+document.getElementById("reviewsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.reviews.classList.remove("hidden"); fetchReviews(); });
+document.getElementById("analyticsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.analytics.classList.remove("hidden"); fetchBookingAnalytics(); });
+document.getElementById("logoutBtn").onclick = ()=>{ localStorage.removeItem("token"); window.location.href="/login.html"; };
+document.getElementById("closeReviewBtn").onclick=()=>{ document.getElementById("reviewOverlay").style.display="none"; canNavigate=true; };
+
+// --- Profile Upload & Preview ---
+const profilePicInput = document.getElementById("profilePicInput");
+const profilePicImg = document.getElementById("profilePic");
+const uploadPicBtn = document.getElementById("uploadPicBtn");
+const removePicBtn = document.getElementById("removePicBtn");
+
+// Preview selected image
+profilePicInput.addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")) {
+    alert("Please select a valid image file.");
+    profilePicInput.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(event){
+    profilePicImg.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Upload to backend
+uploadPicBtn.addEventListener("click", async () => {
+  const file = profilePicInput.files[0];
+  if(!file) return alert("Please select a profile image first.");
+  const formData = new FormData();
+  formData.append("profilePic", file);
+  try {
+    const res = await fetch("/auth/upload-profile", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token },
+      body: formData
+    });
+    const data = await res.json();
+    if(data.success){
+      // Use returned path from server if available
+      if(data.profilePic) profilePicImg.src = data.profilePic;
+      alert("Profile updated!");
+    } else {
+      alert(data.message || "Upload failed.");
+    }
+  } catch(err){
+    console.error(err);
+    alert("Upload failed.");
+  }
+});
+
+// Simple Remove button (client-side only; to actually remove server-side you'd need an endpoint)
+removePicBtn.addEventListener("click", () => {
+  profilePicInput.value = "";
+  profilePicImg.src = "/images/default-avatar.png";
+});
+
+// --- Loyalty ---
+function updateLoyaltyBar(points){
+  const progressBar = document.getElementById("loyaltyProgressBar");
+  const loyaltyDisplay = document.getElementById("loyaltyDisplay");
+  loyaltyDisplay.innerText = points;
+  const thresholds=[50,100,150,200];
+  const nextReward=thresholds.find(t=>t>points)||thresholds[thresholds.length-1];
+  const percent=Math.min((points/nextReward)*100,100);
+  progressBar.style.width=percent+"%";
+  progressBar.innerText=Math.round(percent)+"%";
+  document.getElementById("nextRewardText").innerText=`Next reward at ${nextReward} points`;
+}
+
+// --- Fetch Profile ---
+async function fetchUserProfile(){
+  try{
+    const res = await fetch("/auth/me",{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+    if(!data || !data.user) return console.warn("No profile data");
+    const user = data.user;
+    // Use server-provided profilePic if available
+    if(user.profilePic) document.getElementById("profilePic").src = user.profilePic;
+    document.getElementById("profileInfo").innerHTML=`
+      <div><strong>Name:</strong> ${user.username||"N/A"}</div>
+      <div><strong>Email:</strong> ${user.email||"N/A"}</div>
+      <div><strong>Bookings Made:</strong> ${user.bookingsCount||0}</div>
+      <div><strong>Loyalty Points:</strong> ${user.loyaltyPoints||0}</div>
+    `;
+    updateLoyaltyBar(user.loyaltyPoints||0);
+    fetchLatestUserReview();
+  }catch(err){ console.error(err); }
+}
+
+// --- Fetch Latest Review ---
+async function fetchLatestUserReview(){
+  try{
+    const res = await fetch("/reviews/me",{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+    const container = document.getElementById("userLatestReview");
+    if(!data.success || !data.reviews || data.reviews.length===0){ container.classList.add("hidden"); return; }
+    const r = data.reviews[0];
+    container.classList.remove("hidden");
+    container.innerHTML=`<h3>Your Latest Review</h3>
+      <p><strong>Car:</strong> ${r.booking?.carModel||"N/A"}</p>
+      <p><strong>Service:</strong> ${r.booking?.serviceType||"N/A"}</p>
+      <p>${"⭐".repeat(r.rating)}</p>
+      <p>${r.comment}</p>`;
+  }catch(err){ console.error(err); }
+}
+
+// --- Fetch Bookings ---
+async function fetchUserBookings(){
+  try{
+    const res = await fetch("/bookings/user",{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+    const tbody = document.getElementById("bookingTableBody");
+    tbody.innerHTML="";
+    (data.bookings||[]).forEach(b=>{
+      const reviewStatus = b.review ? `
+        <div class="review-box"><p><strong>Your Review:</strong></p>
+        <p>${"⭐".repeat(b.review.rating)}</p><p>${b.review.comment}</p></div>
+        <button class="button" onclick='viewReview(${JSON.stringify(b.review)})'>View Review</button>
+      ` : "Not Reviewed";
+
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${b._id}</td><td>${b.carModel}</td><td>${b.serviceType}</td>
+        <td>${new Date(b.date).toLocaleDateString()}</td><td>${b.totalAmount||0}</td>
+        <td class="${b.status==="Completed"?"completed":"pending"}">${b.status}</td>
+        <td>${reviewStatus}</td>`;
+      tbody.appendChild(tr);
+    });
+    showLastReviewForm(data.bookings||[]);
+  }catch(err){ console.error(err); }
+}
+
+// --- Offers ---
+const sampleOffers = [
+  { title: "Seasonal Offers", description: "Get discounts on certain services during this season!" },
+  { title: "Referral Program", description: "Refer a friend and earn points or discounts!" },
+  { title: "Flash Sales", description: "Grab limited-time offers before they expire!" }
+];
+let displayedOffers = new Set();
+function displayOffers(offers){
+  const container = document.getElementById("offersContainer");
+  container.innerHTML = "";
+  offers.forEach(o=>{
+    const div = document.createElement("div");
+    div.className = "offer-card";
+    div.innerHTML = `<h4>${o.title}</h4><p>${o.description}</p>`;
+    container.appendChild(div);
+    if(!displayedOffers.has(o.title)){
+      showOfferNotification(o);
+      displayedOffers.add(o.title);
+    }
+  });
+}
+function showOfferNotification(offer){
+  const notif = document.createElement("div");
+  notif.className = "message-box";
+  notif.style.borderLeft = "5px solid #17a2b8";
+  notif.innerHTML = `<strong>New Offer:</strong> ${offer.title}<br>${offer.description}`;
+  document.body.appendChild(notif);
+  setTimeout(()=>{ notif.remove(); }, 5000);
+}
+
+// --- Reviews ---
+async function fetchReviews(){
+  try{
+    const res = await fetch("/reviews",{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+    const container = document.getElementById("reviewsContainer");
+    container.innerHTML = "";
+    if(!data.success || !data.reviews || data.reviews.length===0){
+      container.innerHTML = "<p>No customer reviews yet.</p>";
+      return;
+    }
+    const sortedReviews = data.reviews.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+    sortedReviews.forEach(r=>{
+      const customerName = r.customerName || r.user?.username || "Anonymous";
+      const carModel = r.booking?.carModel || r.carModel || "N/A";
+      const serviceType = r.booking?.serviceType || r.serviceType || "N/A";
+      const rating = r.review?.rating || r.rating || 0;
+      const comment = r.review?.comment || r.comment || "";
+      const div = document.createElement("div");
+      div.className="review-card";
+      div.innerHTML=`<h4>${customerName}</h4>
+        <p><strong>Car:</strong> ${carModel}</p>
+        <p><strong>Service:</strong> ${serviceType}</p>
+        <p>${"⭐".repeat(rating)}</p>
+        <p>${comment}</p>`;
+      container.appendChild(div);
+    });
+  }catch(err){ console.error(err); }
+}
+
+// --- Review Overlay ---
+function showLastReviewForm(bookings){
+  const lastCompleted = (bookings||[]).filter(b=>b.status==="Completed" && !b.review)
+    .sort((a,b)=> new Date(b.date)-new Date(a.date))[0];
+  if(!lastCompleted){ canNavigate=true; return; }
+
+  canNavigate=false;
+  const overlay=document.getElementById("reviewOverlay");
+  overlay.style.display="flex";
+  document.getElementById("overlayContent").innerHTML=`
+    <h3>Review Your Last Completed Service</h3>
+    <p><strong>Booking ID:</strong> ${lastCompleted._id}</p>
+    <p><strong>Car Model:</strong> ${lastCompleted.carModel}</p>
+    <p><strong>Service:</strong> ${lastCompleted.serviceType}</p>
+    <p><strong>Date:</strong> ${new Date(lastCompleted.date).toLocaleDateString()}</p>
+    <label for="rating">Rating (1-5):</label>
+    <input type="number" id="rating" min="1" max="5"><br><br>
+    <label for="comment">Comment:</label>
+    <textarea id="comment" rows="3" placeholder="Write your review..."></textarea><br><br>
+    <button id="submitReviewBtn" class="button">Submit Review</button>
+  `;
+  document.getElementById("submitReviewBtn").onclick=async ()=>{
+    const rating=parseInt(document.getElementById("rating").value);
+    const comment=document.getElementById("comment").value.trim();
+    if(!rating||rating<1||rating>5) return alert("Enter valid rating 1-5");
+    if(!comment) return alert("Comment cannot be empty");
+    try{
+      const res=await fetch(`/bookings/${lastCompleted._id}/review`,{
+        method:"POST",
+        headers:{ "Authorization":"Bearer "+token, "Content-Type":"application/json" },
+        body:JSON.stringify({ rating, comment })
+      });
+      const data=await res.json();
+      if(!data.success) return alert(data.message);
+      overlay.style.display="none";
+      canNavigate=true;
+      fetchUserBookings();
+      fetchReviews();
+      fetchUserProfile();
+    }catch(err){ console.error(err); }
+  };
+}
+function viewReview(review){
+  const overlay=document.getElementById("reviewOverlay");
+  overlay.style.display="flex";
+  const carModel = review.booking?.carModel || review.carModel || "N/A";
+  const serviceType = review.booking?.serviceType || review.serviceType || "N/A";
+  const rating = review.rating || review.review?.rating || 0;
+  const comment = review.comment || review.review?.comment || "";
+  document.getElementById("overlayContent").innerHTML=`
+    <h3>View Review</h3>
+    <p><strong>Car:</strong> ${carModel}</p>
+    <p><strong>Service:</strong> ${serviceType}</p>
+    <p>${"⭐".repeat(rating)}</p>
+    <p>${comment}</p>`;
+}
+
+// --- Admin Messages ---
+async function fetchAdminMessages(){
+  try{
+    const res = await fetch("/admin/messages",{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+    const container=document.getElementById("adminMessages");
+    container.innerHTML="";
+    if(!data.success || !data.messages || data.messages.length===0) container.innerHTML="<p>No messages.</p>";
+    (data.messages||[]).forEach(m=>{
+      const div=document.createElement("div");
+      div.className="message-box";
+      div.innerHTML=`<p>${m.message}</p><small>${new Date(m.createdAt).toLocaleString()}</small>`;
+      container.appendChild(div);
+    });
+    showNotification("You have new admin messages!");
+  }catch(err){ console.error(err); }
+}
+
+// --- Live Clock ---
+function updateClock(){
+  const now = new Date();
+  document.getElementById("liveClock").innerText = now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// --- Notification ---
+function showNotification(message){
+  const box = document.getElementById("notificationBox");
+  box.innerText = message;
+  box.style.display = "block";
+  setTimeout(()=>{ box.style.display="none"; }, 4000);
+}
+
+// --- Booking Analytics (with range option) ---
+async function fetchBookingAnalytics(range = 'monthly'){
+  try{
+    // your backend analytics endpoint - adjust if your route differs
+    const res = await fetch("/analytics?range="+encodeURIComponent(range),{ headers:{ "Authorization":"Bearer "+token }});
+    const data = await res.json();
+
+    // Backwards-compat fallback if endpoint returns different shape
+    // Expecting data like { success:true, revenue: [{label:.., amount:..},...], completed: n, pending: m, topServices: [{service, count}] }
+    const revenueData = data.revenue || (data.revenueChart || []);
+    const completed = data.completed || data.completedCount || 0;
+    const pending = data.pending || data.pendingCount || 0;
+    const topServices = data.topServices || data.top_services || [];
+
+    // Revenue chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    if(window.revenueChart) window.revenueChart.destroy();
+    window.revenueChart = new Chart(revenueCtx, {
+      type:'line',
+      data:{
+        labels: (revenueData||[]).map(r => r.label || r.month || r.week || r.year || ''),
+        datasets:[{
+          label:'Revenue',
+          data: (revenueData||[]).map(r => r.amount || r.value || 0),
+          fill:true,
+          backgroundColor:'rgba(0,123,255,0.15)',
+          borderColor:'#007bff',
+          tension: 0.2
+        }]
+      },
+      options:{ responsive:true, plugins:{ legend:{ display:true } } }
+    });
+
+    // Status chart
+    const statusCtx = document.getElementById('serviceStatusChart').getContext('2d');
+    if(window.statusChart) window.statusChart.destroy();
+    window.statusChart = new Chart(statusCtx, {
+      type:'doughnut',
+      data:{
+        labels:['Completed','Pending'],
+        datasets:[{ data:[completed,pending], backgroundColor:['#28a745','#ff4d4d'] }]
+      },
+      options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } }
+    });
+
+    // Top services
+    const topCtx = document.getElementById('topServicesChart').getContext('2d');
+    if(window.topServicesChart) window.topServicesChart.destroy();
+    window.topServicesChart = new Chart(topCtx, {
+      type:'bar',
+      data:{
+        labels: (topServices||[]).map(s => s.service || s.serviceType || s.serviceName || s._id || 'Service'),
+        datasets:[{ label:'Number of Services', data:(topServices||[]).map(s => s.count || s.total || 0), backgroundColor:'#17a2b8' }]
+      },
+      options:{ responsive:true, scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ display:false } } }
+    });
+
+  }catch(err){ console.error('Analytics error:', err); }
+}
+
+// Support the range selector and refresh button
+const analyticsRange = document.getElementById('analyticsRange');
+const refreshAnalyticsBtn = document.getElementById('refreshAnalyticsBtn');
+refreshAnalyticsBtn.addEventListener('click', ()=> {
+  const range = analyticsRange.value;
+  fetchBookingAnalytics(range);
+});
+
+// Also fetch analytics when analytics tab is opened via nav (handled earlier by analyticsLink)
+
+// --- Initialize ---
+hideAllSections();
+sections.home.classList.remove("hidden");
+fetchUserProfile();
+fetchUserBookings();
+</script>
+</body>
+</html>

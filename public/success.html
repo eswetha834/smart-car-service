@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Booking Success</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .success-box {
+    background: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 450px;
+  }
+  .success-box h1 {
+    color: #28a745;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  .success-box p {
+    color: #555;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: inline-block;
+    margin: 5px;
+  }
+  .btn:hover { background: #0056b3; }
+  #status { font-weight: bold; margin-top: 15px; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="success-box">
+  <h1>✅ Booking Confirmed!</h1>
+  <p id="details"></p>
+  <div id="status">Status: <span id="bookingStatus">Pending</span></div>
+  <a href="booking.html" class="btn">Book Another Service</a>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const bookingData = JSON.parse(localStorage.getItem("bookingData") || "{}");
+
+if(!bookingData.customerName){
+  alert("No booking data found!");
+  window.location.href = "booking.html";
+}
+
+// Show booking details
+document.getElementById("details").innerHTML = `
+  <strong>Customer:</strong> ${bookingData.customerName}<br>
+  <strong>Car Model:</strong> ${bookingData.carModel}<br>
+  <strong>Service:</strong> ${bookingData.serviceType}<br>
+  <strong>Date:</strong> ${bookingData.date}<br>
+  <strong>Payment:</strong> ${bookingData.paymentMethod}<br>
+  <strong>Total:</strong> ₹${bookingData.totalAmount || 0}
+`;
+
+// Poll backend every 3 seconds to check if admin has marked as completed
+async function checkBookingStatus(){
+  try {
+    const res = await fetch(`/admin/bookings`, {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    if(!res.ok) return;
+    const bookings = await res.json();
+    const current = bookings.find(b => new Date(b.date).toISOString().split("T")[0] === bookingData.date && b.customerName === bookingData.customerName);
+    if(current){
+      const statusElem = document.getElementById("bookingStatus");
+      if(current.completed){
+        statusElem.innerText = "Completed";
+        statusElem.style.color = "green";
+      } else {
+        statusElem.innerText = "Pending";
+        statusElem.style.color = "#ff9900";
+      }
+    }
+  } catch(err){
+    console.error(err);
+  }
+}
+
+// Start polling
+setInterval(checkBookingStatus, 3000);
+checkBookingStatus();
+</script>
+</body>
+</html>

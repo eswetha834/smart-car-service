@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Booking Page</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+body { font-family: Arial; margin:20px; background:#eef2f7; }
+.container { max-width:600px; margin:auto; background:#fff; padding:25px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
+h2 { text-align:center; color:#333; }
+input, select, button { width:100%; padding:12px; margin:10px 0; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+input:focus, select:focus { border-color:#007bff; outline:none; }
+button { cursor:pointer; font-weight:bold; transition:0.3s; }
+#proceedPay { display:none; margin-bottom:10px; border:none; color:#fff; }
+#submitBtn { background:#007bff; color:#fff; border:none; }
+#submitBtn:hover { background:#0056b3; }
+#message { margin-top:10px; color:red; text-align:center; font-weight:bold; }
+label { font-weight:bold; display:block; margin-top:10px; }
+#totalAmount { font-weight:bold; text-align:center; margin:10px 0; color:#007bff; display:none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Book a Service</h2>
+<form id="bookingForm">
+  <input type="text" name="customerName" placeholder="Your Name" required>
+  <input type="email" name="email" placeholder="Your Email">
+  <input type="text" name="phone" placeholder="Phone Number" maxlength="10" pattern="\d{10}" required>
+
+  <label>Car Model:</label>
+  <select name="carModel" id="carModel" required>
+    <option value="">Loading cars...</option>
+  </select>
+
+  <label>Service Type:</label>
+  <select name="serviceType" id="serviceType" required>
+    <option value="">Loading services...</option>
+  </select>
+
+  <label>Recurring Service:</label>
+  <select name="recurring" id="recurring">
+    <option value="none">One-time</option>
+    <option value="monthly">Monthly</option>
+    <option value="quarterly">Quarterly</option>
+  </select>
+
+  <input type="text" id="datePicker" name="date" placeholder="Select Date" required>
+
+  <label>Payment Method:</label>
+  <select name="paymentMethod" id="paymentMethod" required>
+    <option value="">Select Payment</option>
+    <option value="paypal">PayPal</option>
+    <option value="razorpay">Razorpay</option>
+    <option value="paytm">Paytm</option>
+    <option value="gpay">Google Pay</option>
+    <option value="cod">Cash on Delivery</option>
+  </select>
+<div class="card">
+  <h3>Apply Coupon</h3>
+  <input type="text" id="couponCode" placeholder="Enter coupon code">
+  <button class="button" id="applyCouponBtn">Apply</button>
+  <p id="discountInfo">Discount: ₹0</p>
+  <h4>Total Amount: ₹<span id="totalAmount">0</span></h4>
+</div>
+
+  <button type="button" id="proceedPay">Proceed to Pay</button>
+  <button type="submit" id="submitBtn">Submit Booking</button>
+</form>
+<div id="message"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const token = localStorage.getItem("token");
+if(!token){ alert("Please login first"); window.location.href="/login.html"; }
+
+let fullyBookedDates = [];
+let fpInstance = null;
+
+const carModelSelect = document.getElementById("carModel");
+const serviceTypeSelect = document.getElementById("serviceType");
+const paymentSelect = document.getElementById("paymentMethod");
+const totalAmountDiv = document.getElementById("totalAmount");
+async function fetchCars() {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch("/bookings/cars", {
+      headers: { "Authorization": "Bearer " + token },
+    });
+    const cars = await res.json();
+
+    const carSelect = document.getElementById("car");
+    carSelect.innerHTML = cars
+      .map(c => `<option value="${c._id}">${c.name} - ₹${c.price}</option>`)
+      .join("");
+  } catch (err) {
+    console.error("Error fetching cars:", err);
+  }
+}
+async function fetchServices() {
+  try {
+    const res = await fetch("/bookings/services");
+    const services = await res.json();
+
+    const serviceSelect = document.getElementById("service");
+    serviceSelect.innerHTML = services
+      .map(s => `<option value="${s._id}">${s.name} - ₹${s.price}</option>`)
+      .join("");
+  } catch (err) {
+    console.error("Error fetching services:", err);
+  }
+}
+async function fetchBookedDates() {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch("/bookings/dates", {
+      headers: { "Authorization": "Bearer " + token },
+    });
+    const data = await res.json();
+
+    if (data.success && data.fullyBooked.length > 0) {
+      flatpickr("#date", {
+        disable: data.fullyBooked,
+        dateFormat: "Y-m-d",
+      });
+    } else {
+      flatpickr("#date", { dateFormat: "Y-m-d" });
+    }
+  } catch (err) {
+    console.error("Error fetching booked dates:", err);
+    flatpickr("#date", { dateFormat: "Y-m-d" });
+  }
+}
+async function submitBooking(event) {
+  event.preventDefault();
+  const token = localStorage.getItem("token");
+
+  const carId = document.getElementById("car").value;
+  const serviceId = document.getElementById("service").value;
+  const date = document.getElementById("date").value;
+  const time = document.getElementById("time").value;
+  const notes = document.getElementById("notes").value;
+
+  try {
+    const res = await fetch("/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token,
+      },
+      body: JSON.stringify({ carId, serviceId, date, time, notes }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Booking successful!");
+      document.getElementById("bookingForm").reset();
+    } else {
+      alert("⚠️ " + (data.message || "Booking failed"));
+    }
+  } catch (err) {
+    console.error("Error creating booking:", err);
+    alert("⚠️ Error creating booking");
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  fetchCars();
+  fetchServices();
+  fetchBookedDates();
+
+  const bookingForm = document.getElementById("bookingForm");
+  if (bookingForm) bookingForm.addEventListener("submit", submitBooking);
+});
+// ---------------- Load Cars ----------------
+async function loadCars() {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("/booking/cars", {  // matches backend
+      headers: { "Authorization": "Bearer " + token }
+    });
+    const cars = await res.json();
+
+    if (!Array.isArray(cars) || cars.length === 0) {
+      carModelSelect.innerHTML = '<option value="">No cars available</option>';
+      return;
+    }
+
+    carModelSelect.innerHTML = '<option value="">Select Car Model</option>';
+    cars.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c._id;                   // use _id for booking
+      option.dataset.price = c.price || 500;
+      option.dataset.multiplier = c.multiplier || 1;
+      option.innerText = `${c.name} - ₹${c.price ?? 0}`;
+      carModelSelect.appendChild(option);
+    });
+    updateTotalDisplay();
+  } catch (err) {
+    console.error("Error loading cars:", err);
+    carModelSelect.innerHTML = '<option value="">Error loading cars</option>';
+  }
+}
+
+// ---------------- Load Services ----------------
+async function loadServices() {
+  try {
+    const res = await fetch("/services"); // services route (public)
+    const services = await res.json();
+
+    if (!Array.isArray(services) || services.length === 0) {
+      serviceTypeSelect.innerHTML = '<option value="">No services available</option>';
+      return;
+    }
+
+    serviceTypeSelect.innerHTML = '<option value="">Select Service</option>';
+    services.forEach(s => {
+      const option = document.createElement("option");
+      option.value = s._id;
+      option.dataset.name = s.name;
+      option.dataset.price = s.price;
+      option.innerText = `${s.name} - ₹${s.price}`;
+      serviceTypeSelect.appendChild(option);
+    });
+    updateTotalDisplay();
+  } catch (err) {
+    console.error("Error loading services:", err);
+    serviceTypeSelect.innerHTML = '<option value="">Error loading services</option>';
+  }
+}
+
+// ---------------- Load Fully Booked Dates ----------------
+async function loadFullyBookedDates(){
+  try {
+    const res = await fetch("/bookings/dates", { headers:{ Authorization:"Bearer "+token } });
+    const data = await res.json();
+    if(data && data.success){
+      fullyBookedDates = data.fullyBooked || [];
+      fpInstance = flatpickr("#datePicker", {
+        minDate:"today",
+        disable: fullyBookedDates,
+        onDayCreate: (dObj, dStr, fp, dayElem) => {
+          const dateStr = dayElem.dateObj.toISOString().split("T")[0];
+          if(fullyBookedDates.includes(dateStr)){
+            dayElem.style.backgroundColor="#ff4d4d";
+            dayElem.style.color="#fff";
+            dayElem.style.borderRadius="50%";
+            dayElem.style.cursor="not-allowed";
+          }
+        }
+      });
+    } else {
+      fpInstance = flatpickr("#datePicker", { minDate:"today" });
+    }
+  } catch(err){ console.error(err); fpInstance = flatpickr("#datePicker", { minDate:"today" }); }
+}
+
+// ---------------- Calculate Total ----------------
+function calculateTotal(){
+  const selectedCar = carModelSelect.selectedOptions[0];
+  const selectedService = serviceTypeSelect.selectedOptions[0];
+  const carPrice = parseInt(selectedCar?.dataset.price || 0);
+  const carMultiplier = parseFloat(selectedCar?.dataset.multiplier || 1);
+  const servicePrice = parseInt(selectedService?.dataset.price || 0);
+  return Math.round((carPrice + servicePrice) * carMultiplier);
+}
+
+function updateTotalDisplay(){
+  const total = calculateTotal();
+  if(paymentSelect.value === "cod"){
+    totalAmountDiv.style.display = "block";
+    totalAmountDiv.innerText = "Total Amount: ₹" + total;
+  } else {
+    totalAmountDiv.style.display = "none";
+  }
+}
+
+carModelSelect.addEventListener("change", updateTotalDisplay);
+serviceTypeSelect.addEventListener("change", updateTotalDisplay);
+paymentSelect.addEventListener("change", updateTotalDisplay);
+
+// ---------------- Payment Button ----------------
+document.getElementById("paymentMethod").addEventListener("change", e=>{
+  const proceedBtn=document.getElementById("proceedPay");
+  proceedBtn.style.display="none";
+  switch(e.target.value){
+    case "paypal": proceedBtn.style.display="block"; proceedBtn.style.background="#ffc439"; proceedBtn.innerText="Proceed with PayPal"; break;
+    case "razorpay": proceedBtn.style.display="block"; proceedBtn.style.background="#007bff"; proceedBtn.innerText="Proceed with Razorpay"; break;
+    case "paytm": proceedBtn.style.display="block"; proceedBtn.style.background="#ff8c00"; proceedBtn.innerText="Proceed with Paytm"; break;
+    case "gpay": proceedBtn.style.display="block"; proceedBtn.style.background="#34a853"; proceedBtn.innerText="Proceed with Google Pay"; break;
+    case "cod": proceedBtn.style.display="none"; updateTotalDisplay(); break;
+    default: proceedBtn.style.display="none"; break;
+  }
+});
+
+// ---------------- Submit Booking ----------------
+async function submitBooking(data){
+  try {
+    const res = await fetch("/bookings", {
+      method:"POST",
+      headers: {"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    document.getElementById("message").innerText = result.message || "Booking submitted";
+    if(result.success){
+      alert("Booking submitted successfully!");
+      // update fully booked dates locally (if date returned blocked by API you may re-fetch)
+      if(fpInstance && data.date){
+        const current = fpInstance.config.disable || [];
+        if(!current.includes(data.date)) {
+          fpInstance.set("disable", [...current, data.date]);
+        }
+      }
+      document.getElementById("bookingForm").reset();
+      totalAmountDiv.style.display="none";
+    }
+  } catch(err){
+    console.error(err);
+    document.getElementById("message").innerText="Server error";
+  }
+}
+
+// ---------------- COD Submit ----------------
+document.getElementById("bookingForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  if(paymentSelect.value !== "cod") return;
+  const f = e.target;
+  const selectedService = serviceTypeSelect.selectedOptions[0];
+  if(!selectedService) { alert("Select a service"); return; }
+  const bookingData = {
+    customerName: f.customerName.value,
+    email: f.email.value,
+    phone: f.phone.value,
+    carModel: f.carModel.value,
+    serviceType: selectedService.dataset.name,
+    serviceId: selectedService.value,
+    recurring: f.recurring.value,
+    date: f.date.value,
+    paymentMethod: "cod",
+    totalAmount: calculateTotal(),
+    status: "Pending"
+  };
+  await submitBooking(bookingData);
+});
+// ---------------- Load Cars ----------------
+async function loadCars(){
+  try {
+    const res = await fetch("/booking/cars", { // <-- corrected route
+      headers: { "Authorization": "Bearer " + token }
+    });
+    const cars = await res.json();
+    
+    if(!Array.isArray(cars) || cars.length === 0){
+      carModelSelect.innerHTML = '<option value="">No cars available</option>';
+      return;
+    }
+
+    carModelSelect.innerHTML = '<option value="">Select Car Model</option>';
+    cars.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c._id; // use _id for booking
+      option.dataset.price = c.price || 500;
+      option.dataset.multiplier = c.multiplier || 1;
+      option.innerText = `${c.name} - ₹${c.price ?? 0}`;
+      carModelSelect.appendChild(option);
+    });
+    updateTotalDisplay();
+  } catch(err){
+    console.error("Error loading cars:", err);
+    carModelSelect.innerHTML = '<option value="">Error loading cars</option>';
+  }
+}
+
+// ---------------- Load Services ----------------
+async function loadServices(){
+  try {
+    const res = await fetch("/services"); // keep this if services are public
+    const services = await res.json();
+
+    if(!Array.isArray(services) || services.length === 0){
+      serviceTypeSelect.innerHTML = '<option value="">No services available</option>';
+      return;
+    }
+
+    serviceTypeSelect.innerHTML = '<option value="">Select Service</option>';
+    services.forEach(s => {
+      const option = document.createElement("option");
+      option.value = s._id;
+      option.dataset.name = s.name;
+      option.dataset.price = s.price;
+      option.innerText = `${s.name} - ₹${s.price}`;
+      serviceTypeSelect.appendChild(option);
+    });
+    updateTotalDisplay();
+  } catch(err){
+    console.error("Error loading services:", err);
+    serviceTypeSelect.innerHTML = '<option value="">Error loading services</option>';
+  }
+}
+
+// ---------------- Proceed to Pay ----------------
+document.getElementById("proceedPay").addEventListener("click", async ()=>{
+  const f = document.getElementById("bookingForm");
+  const selectedService = serviceTypeSelect.selectedOptions[0];
+  if(!selectedService) { alert("Select a service"); return; }
+  const bookingData = {
+    customerName: f.customerName.value,
+    email: f.email.value,
+    phone: f.phone.value,
+    carModel: f.carModel.value,
+    serviceType: selectedService.dataset.name,
+    serviceId: selectedService.value,
+    recurring: f.recurring.value,
+    date: f.date.value,
+    paymentMethod: paymentSelect.value,
+    totalAmount: calculateTotal(),
+    status: "Pending"
+  };
+  const total = calculateTotal() * 100; // Razorpay expects paise
+
+  if(paymentSelect.value==="razorpay"){
+    const options = {
+      key:"RAZORPAY_KEY_HERE",
+      amount: total,
+      currency:"INR",
+      name:"Smart Car Service",
+      description:"Service Booking",
+      handler: async function(res){
+        bookingData.paymentId = res.razorpay_payment_id;
+        bookingData.status = "Paid";
+        await submitBooking(bookingData);
+      },
+      prefill:{ name:f.customerName.value, email:f.email.value, contact:f.phone.value },
+      theme:{ color:"#007bff" }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  }
+  else if(paymentSelect.value==="paypal"){
+    // redirect to your backend PayPal flow - this is a simple example
+    window.location.href = `/paypal-checkout?name=${encodeURIComponent(bookingData.customerName)}&email=${encodeURIComponent(bookingData.email)}&amount=${bookingData.totalAmount}`;
+  }
+  else if(paymentSelect.value==="paytm"){
+    window.location.href = `/paytm-checkout?name=${encodeURIComponent(bookingData.customerName)}&phone=${encodeURIComponent(bookingData.phone)}&amount=${bookingData.totalAmount}`;
+  }
+  else if(paymentSelect.value==="gpay"){
+    window.location.href = `/gpay-checkout?name=${encodeURIComponent(bookingData.customerName)}&amount=${bookingData.totalAmount}`;
+  }
+});
+
+// ---------------- Initialize ----------------
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadCars();
+  loadServices();
+  loadFullyBookedDates();
+});
+</script>
+</body>
+</html>
