@@ -2,208 +2,1052 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>User Dashboard - Smart Car Service</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Car Service - Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
-  .sidebar { width:220px; background:#007bff; color:#fff; height:100vh; position:fixed; top:0; left:0; padding-top:20px; }
-  .sidebar h2 { text-align:center; margin-bottom:30px; }
-  .sidebar a { display:block; color:#fff; padding:15px 20px; text-decoration:none; margin:5px 0; border-radius:5px; cursor:pointer; }
-  .sidebar a:hover { background:#0056b3; }
-  .main { margin-left:240px; padding:20px; transition:0.3s; }
-  .card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 6px 18px rgba(0,0,0,0.1); }
-  .card h3 { margin-top:0; color:#007bff; }
-  table { width:100%; border-collapse:collapse; margin-top:20px; }
-  th, td { padding:12px; border:1px solid #ccc; text-align:center; }
-  th { background-color:#007bff; color:#fff; }
-  tr:nth-child(even){ background:#f2f2f2; }
-  .status { font-weight:bold; }
-  .pending { color:#ff4d4d; }
-  .completed { color:#28a745; }
-  .message-box { background:#fff3cd; padding:8px 12px; margin:5px 0; border-left:5px solid #ffc107; border-radius:5px; text-align:left; }
-  .hidden { display:none; }
-  .offers, .reviews { display:flex; gap:20px; flex-wrap:wrap; }
-  .offer-card, .review-card { flex:1 1 200px; background:#f1f5f9; padding:15px; border-radius:10px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-  .offer-card h4, .review-card h4 { margin:10px 0; color:#007bff; }
-  .loyalty { background: linear-gradient(90deg,#ff9a9e,#fad0c4); padding:15px; border-radius:10px; text-align:center; margin-bottom:20px; color:#fff; font-weight:bold; }
-  footer { text-align:center; margin-top:30px; padding:10px; background:#f4f6f9; color:#333; font-size:0.9em; border-top:1px solid #ccc; }
-  .button { padding:8px 12px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer; }
-  .button:hover { background:#0056b3; }
-  #loyaltyProgress { width: 100%; background:#ddd; border-radius:8px; margin-top:5px; }
-  #loyaltyProgressBar { width:0%; height:20px; background:#28a745; border-radius:8px; text-align:center; color:#fff; line-height:20px; }
-  #reviewOverlay {
-    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
-    display:flex; justify-content:center; align-items:center; z-index:9999; display:none;
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter', sans-serif; background:#0a0a0f; color:#e2e8f0; min-height:100vh; }
+  
+  /* Neon Color Variables */
+  :root {
+    --neon-blue: #00F0FF;
+    --neon-green: #10B981;
+    --neon-amber: #F59E0B;
+    --neon-red: #EF4444;
+    --bg-dark: #0a0a0f;
+    --bg-card: #12121a;
+    --bg-card-hover: #1a1a25;
+    --border-color: #2a2a3a;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
   }
-  #reviewOverlay .card { width:400px; padding:20px; background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.2); position:relative; }
-  #reviewOverlay .closeBtn {
-    position:absolute; top:10px; right:10px; background:#ff4d4d; color:#fff; border:none; border-radius:50%;
-    width:25px; height:25px; cursor:pointer; font-weight:bold;
+  
+  /* Sidebar */
+  .sidebar { width:260px; background:linear-gradient(180deg, #12121a 0%, #0a0a0f 100%); height:100vh; position:fixed; top:0; left:0; padding:24px; border-right:1px solid var(--border-color); z-index:1000; }
+  .sidebar-header { display:flex; align-items:center; gap:12px; margin-bottom:40px; padding-bottom:20px; border-bottom:1px solid var(--border-color); }
+  .logo-icon { width:48px; height:48px; background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; box-shadow:0 0 20px rgba(0, 240, 255, 0.3); }
+  .sidebar-header h2 { font-size:20px; font-weight:700; color:var(--text-primary); text-shadow:0 0 10px rgba(0, 240, 255, 0.5); }
+  .sidebar-header span { font-size:12px; color:var(--text-secondary); }
+  
+  .nav-links { display:flex; flex-direction:column; gap:8px; overflow-y:auto; max-height:calc(100vh - 200px); padding-right:4px; }
+  .nav-links::-webkit-scrollbar { width:6px; }
+  .nav-links::-webkit-scrollbar-track { background:var(--bg-dark); border-radius:3px; }
+  .nav-links::-webkit-scrollbar-thumb { background:var(--border-color); border-radius:3px; }
+  .nav-links::-webkit-scrollbar-thumb:hover { background:var(--neon-blue); }
+  .nav-link { display:flex; align-items:center; gap:12px; padding:14px 16px; color:var(--text-secondary); text-decoration:none; border-radius:10px; transition:all 0.3s ease; cursor:pointer; font-weight:500; border:1px solid transparent; }
+  .nav-link:hover { background:var(--bg-card-hover); color:var(--neon-blue); border-color:rgba(0, 240, 255, 0.2); box-shadow:0 0 15px rgba(0, 240, 255, 0.1); }
+  .nav-link.active { background:linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); color:var(--neon-blue); border-color:var(--neon-blue); box-shadow:0 0 20px rgba(0, 240, 255, 0.2); }
+  .nav-link i { width:20px; text-align:center; }
+  
+  .sidebar-footer { position:absolute; bottom:24px; left:24px; right:24px; }
+  .logout-btn { display:flex; align-items:center; gap:12px; padding:14px 16px; color:var(--neon-red); text-decoration:none; border-radius:10px; transition:all 0.3s ease; cursor:pointer; font-weight:500; background:var(--bg-card); border:1px solid var(--border-color); }
+  .logout-btn:hover { background:rgba(239, 68, 68, 0.1); border-color:var(--neon-red); box-shadow:0 0 15px rgba(239, 68, 68, 0.2); }
+  
+  /* Main Content */
+  .main { margin-left:260px; padding:32px; min-height:100vh; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
+  .header h1 { font-size:28px; font-weight:700; color:var(--text-primary); text-shadow:0 0 20px rgba(0, 240, 255, 0.3); }
+  .header-info { display:flex; align-items:center; gap:20px; }
+  .live-clock { font-size:14px; color:var(--neon-blue); background:var(--bg-card); padding:8px 16px; border-radius:8px; border:1px solid var(--border-color); box-shadow:0 0 10px rgba(0, 240, 255, 0.2); }
+  .user-badge { display:flex; align-items:center; gap:10px; background:var(--bg-card); padding:8px 16px; border-radius:8px; border:1px solid var(--border-color); }
+  .user-avatar { width:36px; height:36px; background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; color:#fff; box-shadow:0 0 15px rgba(0, 240, 255, 0.4); }
+  
+  /* Cards with Glassmorphism */
+  .card { background:linear-gradient(135deg, rgba(18, 18, 26, 0.9) 0%, rgba(10, 10, 15, 0.9) 100%); border-radius:20px; padding:24px; margin-bottom:24px; border:1px solid var(--border-color); box-shadow:0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 240, 255, 0.05); backdrop-filter:blur(10px); }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .card h3 { font-size:18px; font-weight:600; color:var(--text-primary); margin:0; }
+  .card h3 i { margin-right:8px; color:var(--neon-blue); text-shadow:0 0 10px rgba(0, 240, 255, 0.5); }
+  
+  /* Stats Grid */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:20px; margin-bottom:32px; }
+  .stat-card { background:linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%); border-radius:20px; padding:24px; border:1px solid var(--border-color); position:relative; overflow:hidden; transition:all 0.3s ease; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-green) 100%); }
+  .stat-card:hover { transform:translateY(-5px); box-shadow:0 10px 40px rgba(0, 240, 255, 0.2); border-color:var(--neon-blue); }
+  .stat-icon { width:48px; height:48px; background:rgba(0, 240, 255, 0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--neon-blue); margin-bottom:16px; box-shadow:0 0 15px rgba(0, 240, 255, 0.3); }
+  .stat-value { font-size:32px; font-weight:700; color:var(--text-primary); margin-bottom:4px; text-shadow:0 0 10px rgba(0, 240, 255, 0.3); }
+  .stat-label { font-size:14px; color:var(--text-secondary); }
+  .stat-change { font-size:12px; color:var(--neon-green); margin-top:8px; }
+  
+  /* Table */
+  .table-container { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:16px; text-align:left; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border-color); }
+  td { padding:16px; border-bottom:1px solid var(--border-color); color:var(--text-primary); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover { background:var(--bg-card-hover); }
+  
+  .status-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; }
+  .status-pending { background:rgba(245, 158, 11, 0.1); color:var(--neon-amber); border:1px solid rgba(245, 158, 11, 0.3); }
+  .status-completed { background:rgba(16, 185, 129, 0.1); color:var(--neon-green); border:1px solid rgba(16, 185, 129, 0.3); }
+  .status-paid { background:rgba(0, 240, 255, 0.1); color:var(--neon-blue); border:1px solid rgba(0, 240, 255, 0.3); }
+  
+  /* Buttons */
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; font-weight:500; cursor:pointer; transition:all 0.3s ease; border:none; font-size:14px; }
+  .btn-primary { background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); color:#fff; box-shadow:0 0 20px rgba(0, 240, 255, 0.3); }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 0 30px rgba(0, 240, 255, 0.5); }
+  .btn-secondary { background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-color); }
+  .btn-secondary:hover { background:var(--bg-card-hover); border-color:var(--neon-blue); }
+  .btn-danger { background:rgba(239, 68, 68, 0.1); color:var(--neon-red); border:1px solid rgba(239, 68, 68, 0.3); }
+  .btn-danger:hover { background:rgba(239, 68, 68, 0.2); box-shadow:0 0 15px rgba(239, 68, 68, 0.3); }
+  .btn-sm { padding:6px 12px; font-size:12px; }
+  
+  /* Profile Section */
+  .profile-container { display:flex; align-items:flex-start; gap:24px; }
+  .profile-pic-wrapper { position:relative; }
+  .profile-pic { width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid var(--border-color); box-shadow:0 0 20px rgba(0, 240, 255, 0.3); }
+  .profile-pic-overlay { position:absolute; bottom:0; right:0; width:36px; height:36px; background:var(--neon-blue); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:3px solid var(--bg-card); box-shadow:0 0 15px rgba(0, 240, 255, 0.5); }
+  .profile-pic-overlay:hover { background:#00c8d6; }
+  .profile-info { flex:1; }
+  .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-top:20px; }
+  .info-item { background:var(--bg-dark); padding:16px; border-radius:12px; border:1px solid var(--border-color); }
+  .info-label { font-size:12px; color:var(--text-secondary); margin-bottom:4px; }
+  .info-value { font-size:16px; font-weight:600; color:var(--text-primary); }
+  
+  /* Loyalty Section */
+  .loyalty-card { background:linear-gradient(135deg, var(--neon-amber) 0%, #d97706 100%); border-radius:20px; padding:24px; color:#fff; box-shadow:0 0 30px rgba(245, 158, 11, 0.3); }
+  .loyalty-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .loyalty-points { font-size:48px; font-weight:700; text-shadow:0 0 20px rgba(255, 255, 255, 0.5); }
+  .loyalty-label { font-size:14px; opacity:0.9; }
+  .progress-bar { width:100%; height:8px; background:rgba(255,255,255,0.2); border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:#fff; border-radius:4px; transition:width 0.5s ease; box-shadow:0 0 10px rgba(255, 255, 255, 0.5); }
+  .reward-info { margin-top:16px; font-size:14px; opacity:0.9; }
+  
+  /* Reviews & Offers */
+  .reviews-grid, .offers-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
+  .review-card, .offer-card { background:var(--bg-dark); padding:20px; border-radius:16px; border:1px solid var(--border-color); transition:all 0.3s ease; }
+  .review-card:hover { border-color:var(--neon-blue); box-shadow:0 0 20px rgba(0, 240, 255, 0.2); }
+  .review-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .review-avatar { width:40px; height:40px; background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; color:#fff; flex-shrink:0; box-shadow:0 0 15px rgba(0, 240, 255, 0.4); }
+  .review-info { flex:1; }
+  .review-name { font-weight:600; color:var(--text-primary); font-size:15px; }
+  .review-service { color:var(--neon-blue); font-size:13px; margin-top:2px; }
+  .review-date { color:var(--text-secondary); font-size:12px; margin-top:2px; }
+  .review-stars { color:#fbbf24; margin-bottom:8px; font-size:16px; }
+  .review-text { color:var(--text-secondary); font-size:14px; line-height:1.6; }
+  .offer-badge { display:inline-block; background:linear-gradient(135deg, var(--neon-green) 0%, #059669 100%); color:#fff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; margin-bottom:12px; box-shadow:0 0 15px rgba(16, 185, 129, 0.3); }
+  
+  /* Analytics */
+  .charts-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(350px, 1fr)); gap:24px; }
+  .chart-container { position:relative; height:300px; }
+  .chart-controls { display:flex; gap:12px; margin-bottom:20px; }
+  .chart-select { background:var(--bg-dark); color:var(--text-primary); padding:8px 16px; border-radius:10px; border:1px solid var(--border-color); font-size:14px; cursor:pointer; }
+  .chart-select:focus { border-color:var(--neon-blue); box-shadow:0 0 15px rgba(0, 240, 255, 0.3); }
+  
+  /* Admin Messages */
+  .message-item { background:var(--bg-dark); padding:16px; border-radius:12px; border-left:4px solid var(--neon-blue); margin-bottom:12px; }
+  .message-text { color:var(--text-primary); margin-bottom:8px; }
+  .message-time { font-size:12px; color:var(--text-secondary); }
+  
+  /* Overlay */
+  .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); display:none; align-items:center; justify-content:center; z-index:2000; }
+  .overlay.active { display:flex; }
+  .overlay-card { background:linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%); border-radius:20px; padding:32px; width:100%; max-width:480px; border:1px solid var(--border-color); position:relative; box-shadow:0 0 40px rgba(0, 240, 255, 0.2); }
+  .overlay-close { position:absolute; top:16px; right:16px; width:32px; height:32px; background:var(--bg-card-hover); border:none; border-radius:8px; color:var(--text-primary); cursor:pointer; font-size:16px; border:1px solid var(--border-color); }
+  .overlay-close:hover { background:var(--neon-red); border-color:var(--neon-red); color:#fff; }
+  
+  /* Form Elements */
+  .form-group { margin-bottom:16px; }
+  .form-label { display:block; font-size:14px; color:var(--text-secondary); margin-bottom:8px; }
+  .form-input, .form-textarea { width:100%; background:var(--bg-dark); border:1px solid var(--border-color); border-radius:10px; padding:12px; color:var(--text-primary); font-size:14px; transition:all 0.3s ease; }
+  .form-input:focus, .form-textarea:focus { outline:none; border-color:var(--neon-blue); box-shadow:0 0 15px rgba(0, 240, 255, 0.3); }
+  .form-textarea { min-height:100px; resize:vertical; }
+  
+  /* Loading & Empty States */
+  .loading { text-align:center; padding:40px; color:var(--text-secondary); }
+  .loading i { font-size:32px; margin-bottom:16px; animation:spin 1s linear infinite; color:var(--neon-blue); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 
+    0%, 100% { transform:scale(1); opacity:1; }
+    50% { transform:scale(1.2); opacity:0.7; }
   }
-  #recentReview { margin-bottom:20px; padding:15px; background:#f1f5f9; border-radius:10px; }
-  .review-box { background:#f1f5f9; padding:10px; border-radius:8px; margin-top:5px; }
-  .star { color: gold; font-size: 1.1em; }
-  #liveClock { font-size:0.9em; color:#555; float:right; }
-  .notification { position:fixed; top:15px; right:20px; background:#ffc107; color:#000; padding:10px 15px; border-radius:8px; display:none; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:0.3s; }
-  input[type="file"] { display:inline-block; }
-  .profile-actions { margin-top:10px; display:flex; gap:10px; align-items:center; }
-  .small-note { font-size:0.85em; color:#666; margin-top:8px; }
+  .empty-state { text-align:center; padding:40px; color:var(--text-secondary); }
+  .empty-state i { font-size:48px; margin-bottom:16px; opacity:0.5; color:var(--neon-blue); }
+  
+  /* Notification */
+  .notification { position:fixed; top:24px; right:24px; background:var(--bg-card); color:var(--text-primary); padding:16px 24px; border-radius:12px; border:1px solid var(--border-color); box-shadow:0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0, 240, 255, 0.2); display:none; z-index:3000; animation:slideIn 0.3s ease; backdrop-filter:blur(10px); }
+  .notification.success { border-color:var(--neon-green); box-shadow:0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(16, 185, 129, 0.3); }
+  .notification.error { border-color:var(--neon-red); box-shadow:0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(239, 68, 68, 0.3); }
+  @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); justify-content:center; align-items:center; z-index:1000; }
+  .modal-overlay.active { display:flex; }
+  .modal-content { background:linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-radius:20px; padding:32px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; border:1px solid var(--border-color); box-shadow:0 0 40px rgba(0, 240, 255, 0.2); }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .modal-header h3 { font-size:20px; font-weight:600; color:var(--text-primary); }
+  .modal-close { background:var(--bg-card-hover); border:none; border-radius:8px; width:36px; height:36px; color:var(--text-primary); cursor:pointer; font-size:18px; transition:all 0.3s ease; border:1px solid var(--border-color); }
+  .modal-close:hover { background:var(--neon-red); border-color:var(--neon-red); color:#fff; }
+  .detail-item { margin-bottom:16px; }
+  .detail-item label { display:block; color:var(--text-secondary); font-size:13px; margin-bottom:6px; }
+  .detail-item .detail-value { color:var(--text-primary); font-size:16px; font-weight:500; padding:12px; background:var(--bg-dark); border-radius:10px; border:1px solid var(--border-color); }
+  
+  /* Hidden */
+  .hidden { display:none !important; }
+  
+  /* Responsive */
+  @media (max-width:1024px) {
+    .sidebar { width:80px; padding:16px; }
+    .sidebar-header h2, .sidebar-header span, .nav-link span, .logout-btn span { display:none; }
+    .main { margin-left:80px; padding:20px; }
+    .stats-grid { grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); }
+  }
+  @media (max-width:768px) {
+    .sidebar { display:none; }
+    .main { margin-left:0; }
+    .stats-grid { grid-template-columns:1fr; }
+    .charts-grid { grid-template-columns:1fr; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
 <div class="sidebar">
-  <h2>Smart Car Service</h2>
-  <a id="homeLink">Home</a>
-  <a id="profileLink">Profile</a>
-  <a id="myBookingsLink">My Bookings</a>
-  <a id="loyaltyLink">Loyalty</a>
-  <a id="adminMsgLink">Admin Messages</a>
-  <a id="offersLink">Offers</a>
-  <a id="reviewsLink">Customer Reviews</a>
-  <a id="analyticsLink">Analytics</a>
-  <a href="booking.html">Book Service</a>
-  <a id="logoutBtn">Logout</a>
+  <div class="sidebar-header">
+    <div class="logo-icon"><i class="fas fa-car"></i></div>
+    <div>
+      <h2>Smart Car</h2>
+      <span>Service Dashboard</span>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" id="homeLink"><i class="fas fa-home"></i><span>Home</span></a>
+    <a class="nav-link" id="diagnosticsLink"><i class="fas fa-microchip"></i><span>Diagnostics</span></a>
+    <a class="nav-link" id="profileLink"><i class="fas fa-user"></i><span>Profile</span></a>
+    <a class="nav-link" id="myBookingsLink"><i class="fas fa-calendar-check"></i><span>My Bookings</span></a>
+    <a class="nav-link" id="loyaltyLink"><i class="fas fa-star"></i><span>Loyalty Points</span></a>
+    <a class="nav-link" id="reviewsLink"><i class="fas fa-comments"></i><span>Reviews</span></a>
+    <a class="nav-link" id="chatLink"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a class="nav-link" id="analyticsLink"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
+    <a class="nav-link" id="digitalKeyLink"><i class="fas fa-key"></i><span>Digital Key</span></a>
+    <a class="nav-link" href="booking.html"><i class="fas fa-plus-circle"></i><span>Book Service</span></a>
+  </div>
+  <div class="sidebar-footer">
+    <a class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+  </div>
 </div>
 
 <div class="main">
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="header-info">
+      <div class="live-clock" id="liveClock"><i class="far fa-clock"></i> --:--:--</div>
+      <div class="user-badge">
+        <div class="user-avatar" id="headerAvatar">U</div>
+        <span id="headerUsername">User</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home Section -->
   <div id="homeSection" class="card">
-    <h3>Welcome to Smart Car Service</h3>
-    <div id="userLatestReview" class="card hidden"></div>
+    <div class="card-header">
+      <h3><i class="fas fa-home"></i> Welcome Back</h3>
+    </div>
+    
+    <!-- Vehicle Overview -->
+    <div style="margin-bottom:24px;">
+      <div class="card-header" style="margin-bottom:16px;">
+        <h4 style="font-size:16px; color:var(--text-primary);"><i class="fas fa-car"></i> Vehicle Overview</h4>
+        <select id="vehicleSelect" class="chart-select" style="width: auto; font-size:13px;">
+          <option value="honda">Honda City</option>
+          <option value="toyota">Toyota Innova</option>
+          <option value="maruti">Maruti Swift</option>
+          <option value="hyundai">Hyundai Creta</option>
+          <option value="tata">Tata Nexon</option>
+        </select>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 300px; gap:24px;">
+        <!-- Vehicle Visual -->
+        <div style="position:relative; height:250px; background:var(--bg-dark); border-radius:16px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+          <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80" alt="Honda City" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
+          <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(10, 10, 15, 0.9)); padding:16px;">
+            <div style="color:var(--text-primary); font-weight:600; font-size:14px;">Honda City</div>
+            <div style="color:var(--text-secondary); font-size:12px;">2023 Model • 45,000 km</div>
+          </div>
+          <!-- Hotspots -->
+          <div style="position:absolute; top:30%; left:20%; width:16px; height:16px; background:var(--neon-green); border-radius:50%; cursor:pointer; box-shadow:0 0 20px rgba(16, 185, 129, 0.6); animation:pulse 2s infinite; z-index:10;" title="Battery: 98%"></div>
+          <div style="position:absolute; top:50%; left:50%; width:16px; height:16px; background:var(--neon-blue); border-radius:50%; cursor:pointer; box-shadow:0 0 20px rgba(0, 240, 255, 0.6); animation:pulse 2s infinite 0.5s; z-index:10;" title="Engine: Nominal"></div>
+          <div style="position:absolute; top:70%; right:25%; width:16px; height:16px; background:var(--neon-amber); border-radius:50%; cursor:pointer; box-shadow:0 0 20px rgba(245, 158, 11, 0.6); animation:pulse 2s infinite 1s; z-index:10;" title="Brakes: 78%"></div>
+        </div>
+        
+        <!-- Health Score Widget -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="background:var(--bg-dark); border-radius:16px; padding:16px; border:1px solid var(--border-color); text-align:center;">
+            <div style="position:relative; width:120px; height:120px; margin:0 auto;">
+              <svg viewBox="0 0 150 150" style="transform:rotate(-90deg);">
+                <circle cx="75" cy="75" r="60" fill="none" stroke="var(--border-color)" stroke-width="10"/>
+                <circle cx="75" cy="75" r="60" fill="none" stroke="var(--neon-green)" stroke-width="10" stroke-dasharray="377" stroke-dashoffset="23" stroke-linecap="round" style="filter:drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));"/>
+              </svg>
+              <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
+                <div style="font-size:28px; font-weight:700; color:var(--neon-green); text-shadow:0 0 20px rgba(16, 185, 129, 0.5);">94%</div>
+                <div style="font-size:11px; color:var(--text-secondary);">Health Score</div>
+              </div>
+            </div>
+            <div style="margin-top:12px; color:var(--neon-green); font-weight:600; font-size:13px;">Excellent Condition</div>
+          </div>
+          
+          <!-- Component Status -->
+          <div style="background:var(--bg-dark); border-radius:16px; padding:12px; border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="color:var(--text-secondary); font-size:12px;">Battery</span>
+              <span style="color:var(--neon-green); font-size:11px; font-weight:600;">98%</span>
+            </div>
+            <div style="height:3px; background:var(--border-color); border-radius:2px; margin-bottom:8px;">
+              <div style="height:100%; width:98%; background:var(--neon-green); border-radius:2px; box-shadow:0 0 10px rgba(16, 185, 129, 0.5);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="color:var(--text-secondary); font-size:12px;">Brakes</span>
+              <span style="color:var(--neon-amber); font-size:11px; font-weight:600;">78%</span>
+            </div>
+            <div style="height:3px; background:var(--border-color); border-radius:2px; margin-bottom:8px;">
+              <div style="height:100%; width:78%; background:var(--neon-amber); border-radius:2px; box-shadow:0 0 10px rgba(245, 158, 11, 0.5);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--text-secondary); font-size:12px;">Fluids</span>
+              <span style="color:var(--neon-blue); font-size:11px; font-weight:600;">92%</span>
+            </div>
+            <div style="height:3px; background:var(--border-color); border-radius:2px;">
+              <div style="height:100%; width:92%; background:var(--neon-blue); border-radius:2px; box-shadow:0 0 10px rgba(0, 240, 255, 0.5);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Quick Actions Grid -->
+    <div style="margin-bottom:24px;">
+      <h4 style="color:var(--text-primary); margin-bottom:16px; font-size:16px; font-weight:600;">Quick Actions</h4>
+      <div class="stats-grid" style="margin-bottom:0;">
+        <div class="stat-card" style="cursor:pointer;" onclick="document.getElementById('myBookingsLink').click()">
+          <div class="stat-icon"><i class="fas fa-tools"></i></div>
+          <div class="stat-value" style="font-size:18px;">Book Service</div>
+          <div class="stat-label">Schedule Maintenance</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;">
+          <div class="stat-icon"><i class="fas fa-truck-medical"></i></div>
+          <div class="stat-value" style="font-size:18px;">Roadside Assist</div>
+          <div class="stat-label">Emergency Help</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;" onclick="document.getElementById('diagnosticsLink').click()">
+          <div class="stat-icon"><i class="fas fa-microchip"></i></div>
+          <div class="stat-value" style="font-size:18px;">Diagnostics</div>
+          <div class="stat-label">Run Health Check</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;">
+          <div class="stat-icon"><i class="fas fa-charging-station"></i></div>
+          <div class="stat-value" style="font-size:18px;">Find Station</div>
+          <div class="stat-label">Nearby Services</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div style="margin-bottom:24px;">
+      <h4 style="color:var(--text-primary); margin-bottom:16px; font-size:16px; font-weight:600;">Your Stats</h4>
+      <div class="stats-grid" id="statsGrid" style="margin-bottom:0;">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-value" id="totalBookings">0</div>
+          <div class="stat-label">Total Bookings</div>
+          <div class="stat-change"><i class="fas fa-arrow-up"></i> Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="stat-value" id="completedBookings">0</div>
+          <div class="stat-label">Completed Services</div>
+          <div class="stat-change"><i class="fas fa-arrow-up"></i> Done</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-star"></i></div>
+          <div class="stat-value" id="loyaltyPoints">0</div>
+          <div class="stat-label">Loyalty Points</div>
+          <div class="stat-change"><i class="fas fa-arrow-up"></i> Earned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="stat-value" id="pendingBookings">0</div>
+          <div class="stat-label">Pending Services</div>
+          <div class="stat-change"><i class="fas fa-hourglass-half"></i> In Progress</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Welcome Content -->
+    <div id="welcomeContent">
+      <p style="color:var(--text-secondary); margin-bottom:16px;">Welcome to your Smart Car Service dashboard. Manage your bookings, track loyalty points, and view your service history.</p>
+      <div id="recentActivity" class="loading"><i class="fas fa-spinner"></i><p>Loading recent activity...</p></div>
+    </div>
   </div>
 
+  <!-- Predictive Diagnostics & Alerts Section -->
+  <div id="diagnosticsSection" class="card hidden">
+    <div class="card-header">
+      <h3><i class="fas fa-microchip"></i> AI Diagnostics & Alerts</h3>
+      <button class="btn btn-primary btn-sm" onclick="runDiagnostics()"><i class="fas fa-play"></i> Run Diagnostics</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+      <!-- Brake Pad Warning -->
+      <div style="background:var(--bg-dark); border-radius:16px; padding:20px; border:1px solid rgba(245, 158, 11, 0.3); border-left:4px solid var(--neon-amber);">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; background:rgba(245, 158, 11, 0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+              <i class="fas fa-exclamation-triangle" style="color:var(--neon-amber); font-size:18px;"></i>
+            </div>
+            <div>
+              <div style="font-weight:600; color:var(--text-primary);">Brake Pad Wear</div>
+              <div style="font-size:12px; color:var(--text-secondary);">Monitor Required</div>
+            </div>
+          </div>
+          <div style="background:rgba(245, 158, 11, 0.2); color:var(--neon-amber); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">78%</div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:14px; margin-bottom:12px;">Brake pad wear at 78% — Recommended replacement in 1,000 miles</p>
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center;" onclick="window.location.href='/booking.html?service=Brake+Replacement'"><i class="fas fa-calendar"></i> Schedule Fix Now</button>
+      </div>
+      
+      <!-- Battery Status -->
+      <div style="background:var(--bg-dark); border-radius:16px; padding:20px; border:1px solid rgba(16, 185, 129, 0.3); border-left:4px solid var(--neon-green);">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; background:rgba(16, 185, 129, 0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+              <i class="fas fa-car-battery" style="color:var(--neon-green); font-size:18px;"></i>
+            </div>
+            <div>
+              <div style="font-weight:600; color:var(--text-primary);">Battery Health</div>
+              <div style="font-size:12px; color:var(--text-secondary);">Nominal</div>
+            </div>
+          </div>
+          <div style="background:rgba(16, 185, 129, 0.2); color:var(--neon-green); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">98%</div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:14px; margin-bottom:12px;">Battery operating at optimal levels. No action required.</p>
+        <div style="color:var(--neon-green); font-size:13px; font-weight:500;"><i class="fas fa-check-circle"></i> All Systems Normal</div>
+      </div>
+      
+      <!-- Oil Life -->
+      <div style="background:var(--bg-dark); border-radius:16px; padding:20px; border:1px solid rgba(0, 240, 255, 0.3); border-left:4px solid var(--neon-blue);">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; background:rgba(0, 240, 255, 0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+              <i class="fas fa-oil-can" style="color:var(--neon-blue); font-size:18px;"></i>
+            </div>
+            <div>
+              <div style="font-weight:600; color:var(--text-primary);">Oil Life</div>
+              <div style="font-size:12px; color:var(--text-secondary);">Good Condition</div>
+            </div>
+          </div>
+          <div style="background:rgba(0, 240, 255, 0.2); color:var(--neon-blue); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">92%</div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:14px; margin-bottom:12px;">Oil life remaining at 92%. Next oil change recommended in 3,500 miles.</p>
+        <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;" onclick="window.location.href='/booking.html?service=Oil+Change'"><i class="fas fa-calendar-plus"></i> Schedule Oil Change</button>
+      </div>
+    </div>
+    
+    <!-- Service Timeline -->
+    <div style="margin-top:24px;">
+      <h4 style="color:var(--text-primary); margin-bottom:16px; font-size:16px; font-weight:600;">Service Timeline</h4>
+      <div style="position:relative; padding-left:30px;">
+        <div style="position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--border-color);"></div>
+        
+        <div style="position:relative; margin-bottom:24px;">
+          <div style="position:absolute; left:-30px; width:20px; height:20px; background:var(--neon-green); border-radius:50%; border:4px solid var(--bg-dark); box-shadow:0 0 10px rgba(16, 185, 129, 0.5);"></div>
+          <div style="background:var(--bg-dark); padding:16px; border-radius:12px; border:1px solid var(--border-color);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Full Service Completed</div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Sep 26, 2026 • Honda City</div>
+            <div style="color:var(--neon-green); font-size:12px;"><i class="fas fa-check"></i> All checks passed</div>
+          </div>
+        </div>
+        
+        <div style="position:relative; margin-bottom:24px;">
+          <div style="position:absolute; left:-30px; width:20px; height:20px; background:var(--neon-blue); border-radius:50%; border:4px solid var(--bg-dark); box-shadow:0 0 10px rgba(0, 240, 255, 0.5);"></div>
+          <div style="background:var(--bg-dark); padding:16px; border-radius:12px; border:1px solid var(--border-color);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Upcoming: Brake Pad Replacement</div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Recommended in 1,000 miles</div>
+            <div style="color:var(--neon-amber); font-size:12px;"><i class="fas fa-clock"></i> Schedule soon</div>
+          </div>
+        </div>
+        
+        <div style="position:relative;">
+          <div style="position:absolute; left:-30px; width:20px; height:20px; background:var(--border-color); border-radius:50%; border:4px solid var(--bg-dark);"></div>
+          <div style="background:var(--bg-dark); padding:16px; border-radius:12px; border:1px solid var(--border-color);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Next Scheduled Checkup</div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Dec 26, 2026 • Routine Maintenance</div>
+            <div style="color:var(--text-secondary); font-size:12px;"><i class="fas fa-calendar"></i> 90 days away</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Section -->
   <div id="profileSection" class="card hidden">
-    <h3>My Profile</h3>
-    <!-- Profile image uses server value when available -->
-    <img id="profilePic" src="/images/default-avatar.png" alt="Profile Picture" width="120" style="border-radius:50%;"><br><br>
-    <div class="profile-actions">
-      <!-- Only accept images -->
-      <input type="file" id="profilePicInput" accept="image/*">
-      <button class="button" id="uploadPicBtn">Upload</button>
-      <button class="button" id="removePicBtn" style="background:#6c757d;">Remove</button>
+    <div class="card-header">
+      <h3><i class="fas fa-user"></i> My Profile</h3>
     </div>
-    <div class="small-note">Allowed: JPG, PNG, GIF. Max size depends on server config.</div>
-    <div id="profileInfo"></div>
+    <div class="profile-container">
+      <div class="profile-pic-wrapper">
+        <img id="profilePic" src="/images/default-avatar.svg" alt="Profile" class="profile-pic">
+        <label class="profile-pic-overlay">
+          <i class="fas fa-camera" style="color:#fff;"></i>
+          <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
+        </label>
+      </div>
+      <div class="profile-info">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Username</div>
+            <div class="info-value" id="profileUsername">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value" id="profileEmail">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Phone</div>
+            <div class="info-value" id="profilePhone">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Total Bookings</div>
+            <div class="info-value" id="profileBookings">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Bookings Section -->
   <div id="bookingsSection" class="card hidden">
-    <h3>My Bookings</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Booking ID</th>
-          <th>Car Model</th>
-          <th>Service Type</th>
-          <th>Date</th>
-          <th>Total Amount</th>
-          <th>Status</th>
-          <th>Review</th>
-        </tr>
-      </thead>
-      <tbody id="bookingTableBody"></tbody>
-    </table>
-  </div>
-
-  <div id="loyaltySection" class="card hidden">
-    <h3>Loyalty Points</h3>
-    <div class="loyalty">
-      <span id="loyaltyDisplay">0</span> points collected!
-      <div id="loyaltyProgress"><div id="loyaltyProgressBar">0%</div></div>
-      <p id="nextRewardText"></p>
+    <div class="card-header">
+      <h3><i class="fas fa-calendar-check"></i> My Bookings</h3>
+      <button class="btn btn-primary btn-sm" onclick="fetchUserBookings()"><i class="fas fa-sync-alt"></i> Refresh</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Service Type</th>
+            <th>Car Model</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTableBody">
+          <tr><td colspan="6" class="loading"><i class="fas fa-spinner"></i> Loading bookings...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Service Tracking Timeline -->
+    <div style="margin-top:32px;">
+      <h4 style="color:var(--text-primary); margin-bottom:16px; font-size:16px; font-weight:600;">Live Service Tracking</h4>
+      <div id="serviceTracking" style="background:var(--bg-dark); border-radius:16px; padding:24px; border:1px solid var(--border-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <div style="font-weight:600; color:var(--text-primary); font-size:16px;">Basic Oil Change</div>
+            <div style="color:var(--text-secondary); font-size:13px; margin-top:4px;">Honda City • Oct 8, 2026</div>
+          </div>
+          <div style="background:rgba(245, 158, 11, 0.2); color:var(--neon-amber); padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600;">In Progress</div>
+        </div>
+        
+        <!-- Progress Steps -->
+        <div style="display:flex; justify-content:space-between; position:relative; margin-bottom:16px;">
+          <div style="position:absolute; top:20px; left:0; right:0; height:2px; background:var(--border-color);"></div>
+          <div style="position:absolute; top:20px; left:0; height:2px; background:var(--neon-green); width:25%;"></div>
+          
+          <div style="text-align:center; position:relative; z-index:1;">
+            <div style="width:40px; height:40px; background:var(--neon-green); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; box-shadow:0 0 15px rgba(16, 185, 129, 0.5);">
+              <i class="fas fa-check" style="color:#fff; font-size:14px;"></i>
+            </div>
+            <div style="font-size:12px; color:var(--neon-green); font-weight:600;">Confirmed</div>
+          </div>
+          
+          <div style="text-align:center; position:relative; z-index:1;">
+            <div style="width:40px; height:40px; background:var(--neon-green); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; box-shadow:0 0 15px rgba(16, 185, 129, 0.5);">
+              <i class="fas fa-check" style="color:#fff; font-size:14px;"></i>
+            </div>
+            <div style="font-size:12px; color:var(--neon-green); font-weight:600;">Mechanic Assigned</div>
+          </div>
+          
+          <div style="text-align:center; position:relative; z-index:1;">
+            <div style="width:40px; height:40px; background:var(--neon-amber); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; box-shadow:0 0 15px rgba(245, 158, 11, 0.5); animation:pulse 2s infinite;">
+              <i class="fas fa-wrench" style="color:#fff; font-size:14px;"></i>
+            </div>
+            <div style="font-size:12px; color:var(--neon-amber); font-weight:600;">Repairing</div>
+          </div>
+          
+          <div style="text-align:center; position:relative; z-index:1;">
+            <div style="width:40px; height:40px; background:var(--border-color); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">
+              <i class="fas fa-clipboard-check" style="color:var(--text-secondary); font-size:14px;"></i>
+            </div>
+            <div style="font-size:12px; color:var(--text-secondary);">Ready</div>
+          </div>
+          
+          <div style="text-align:center; position:relative; z-index:1;">
+            <div style="width:40px; height:40px; background:var(--border-color); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">
+              <i class="fas fa-car" style="color:var(--text-secondary); font-size:14px;"></i>
+            </div>
+            <div style="font-size:12px; color:var(--text-secondary);">Delivered</div>
+          </div>
+        </div>
+        
+        <!-- Chat Interface -->
+        <div style="background:var(--bg-card); border-radius:12px; padding:16px; border:1px solid var(--border-color); margin-top:16px;">
+          <div style="font-weight:600; color:var(--text-primary); margin-bottom:12px; font-size:14px;"><i class="fas fa-comments"></i> Mechanic Chat</div>
+          <div id="mechanicChatMessages" style="height:100px; overflow-y:auto; margin-bottom:12px; padding:8px; background:var(--bg-dark); border-radius:8px;">
+            <div style="margin-bottom:8px;">
+              <div style="background:var(--bg-card-hover); padding:8px 12px; border-radius:8px; display:inline-block; max-width:80%; font-size:13px; color:var(--text-primary);">
+                Starting oil change now. Should take about 30 minutes.
+              </div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Mechanic • 10:30 AM</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="mechanicChatInput" placeholder="Type a message..." style="flex:1; background:var(--bg-dark); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:var(--text-primary); font-size:13px;" onkeypress="if(event.key==='Enter') sendMechanicMessage()">
+            <button class="btn btn-primary btn-sm" onclick="sendMechanicMessage()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div id="adminMsgSection" class="card hidden"><h3>Admin Messages</h3><div id="adminMessages"></div></div>
-  <div id="offersSection" class="card hidden"><h3>Current Offers</h3><div class="offers" id="offersContainer"></div></div>
-  <div id="reviewsSection" class="card hidden"><h3>Customer Reviews</h3><div class="reviews" id="reviewsContainer"></div></div>
+  <!-- Loyalty Section -->
+  <div id="loyaltySection" class="card hidden">
+    <div class="card-header">
+      <h3><i class="fas fa-star"></i> Loyalty Rewards</h3>
+    </div>
+    <div class="loyalty-card">
+      <div class="loyalty-header">
+        <div>
+          <div class="loyalty-points" id="loyaltyDisplay">0</div>
+          <div class="loyalty-label">Points Earned</div>
+        </div>
+        <i class="fas fa-trophy" style="font-size:48px; opacity:0.3;"></i>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="loyaltyProgressBar" style="width:0%"></div>
+      </div>
+      <div class="reward-info" id="nextRewardText">Next reward at 50 points</div>
+    </div>
+    <div style="margin-top:20px;">
+      <h4 style="color:#fff; margin-bottom:12px;">Rewards Tiers</h4>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px;">
+        <div class="info-item">
+          <div class="info-label">Bronze</div>
+          <div class="info-value">0-49 pts</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Silver</div>
+          <div class="info-value">50-99 pts</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Gold</div>
+          <div class="info-value">100-149 pts</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Platinum</div>
+          <div class="info-value">150+ pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Reviews Section -->
+  <div id="reviewsSection" class="card hidden">
+    <div class="card-header">
+      <h3><i class="fas fa-comments"></i> Customer Reviews</h3>
+      <button class="btn btn-primary btn-sm" onclick="fetchReviews()"><i class="fas fa-sync-alt"></i> Refresh</button>
+    </div>
+    <div id="reviewsContainer" class="reviews-grid">
+      <div class="loading"><i class="fas fa-spinner"></i><p>Loading reviews...</p></div>
+    </div>
+  </div>
+
+  <!-- Analytics Section -->
   <div id="analyticsSection" class="card hidden">
-    <h3>Booking Analytics</h3>
-    <!-- Controls: Weekly / Monthly / Yearly -->
-    <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
-      <label for="analyticsRange">Range:</label>
-      <select id="analyticsRange">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-line"></i> Booking Analytics</h3>
+    </div>
+    <div class="chart-controls">
+      <select class="chart-select" id="analyticsRange" onchange="fetchBookingAnalytics()">
         <option value="weekly">Weekly</option>
         <option value="monthly" selected>Monthly</option>
+        <option value="6months">6 Months</option>
         <option value="yearly">Yearly</option>
       </select>
-      <button class="button" id="refreshAnalyticsBtn">Refresh</button>
+      <button class="btn btn-primary" onclick="fetchBookingAnalytics()"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
-
-    <canvas id="revenueChart" style="max-height:300px;"></canvas>
-    <canvas id="serviceStatusChart" style="max-height:300px; margin-top:20px;"></canvas>
-    <canvas id="topServicesChart" style="max-height:300px; margin-top:20px;"></canvas>
+    <div class="charts-grid">
+      <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="serviceStatusChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="topServicesChart"></canvas>
+      </div>
+    </div>
   </div>
 
-  <h3>Welcome to Smart Car Service <span id="liveClock"></span></h3>
-  <div class="notification" id="notificationBox">You have new alerts!</div>
+  <!-- Digital Key Section -->
+  <div id="digitalKeySection" class="card hidden">
+    <div class="card-header">
+      <h3><i class="fas fa-key"></i> Digital Key Authorization</h3>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+      <!-- Key Status -->
+      <div style="background:var(--bg-dark); border-radius:16px; padding:24px; border:1px solid var(--border-color); text-align:center;">
+        <div style="width:100px; height:100px; background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 0 30px rgba(0, 240, 255, 0.4);">
+          <i class="fas fa-key" style="font-size:40px; color:#fff;"></i>
+        </div>
+        <div style="font-weight:600; color:var(--text-primary); font-size:18px; margin-bottom:8px;">Digital Key Active</div>
+        <div style="color:var(--neon-green); font-size:14px; margin-bottom:16px;"><i class="fas fa-shield-alt"></i> Secure Connection</div>
+        <button class="btn btn-danger btn-sm" onclick="toggleDigitalKey()"><i class="fas fa-lock"></i> Revoke Access</button>
+      </div>
+      
+      <!-- Technician Access -->
+      <div style="background:var(--bg-dark); border-radius:16px; padding:24px; border:1px solid var(--border-color);">
+        <div style="font-weight:600; color:var(--text-primary); margin-bottom:16px; font-size:16px;"><i class="fas fa-user-shield"></i> Temporary Technician Access</div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block; color:var(--text-secondary); font-size:13px; margin-bottom:8px;">Grant Access Duration</label>
+          <select class="chart-select" style="width:100%;">
+            <option value="1">1 Hour</option>
+            <option value="2">2 Hours</option>
+            <option value="4">4 Hours</option>
+            <option value="8">8 Hours</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block; color:var(--text-secondary); font-size:13px; margin-bottom:8px;">Access Code</label>
+          <div style="background:var(--bg-card-hover); padding:12px; border-radius:8px; border:1px solid var(--border-color); font-family:monospace; font-size:24px; letter-spacing:4px; text-align:center; color:var(--neon-blue); font-weight:700;">
+            8X4K-9M2N
+          </div>
+        </div>
+        
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="generateAccessCode()"><i class="fas fa-sync-alt"></i> Generate New</button>
+          <button class="btn btn-secondary" style="flex:1; justify-content:center;" onclick="shareAccessCode()"><i class="fas fa-share"></i> Share</button>
+        </div>
+        
+        <div style="margin-top:16px; padding:12px; background:rgba(245, 158, 11, 0.1); border-radius:8px; border:1px solid rgba(245, 158, 11, 0.3);">
+          <div style="color:var(--neon-amber); font-size:13px; font-weight:600; margin-bottom:4px;"><i class="fas fa-exclamation-triangle"></i> Security Notice</div>
+          <div style="color:var(--text-secondary); font-size:12px;">Access codes are single-use and expire after the selected duration.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Section -->
+  <div id="chatSection" class="card hidden">
+    <div class="card-header">
+      <h3><i class="fas fa-comments"></i> Chat with Support</h3>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:10px; height:10px; background:var(--neon-green); border-radius:50%; box-shadow:0 0 10px rgba(16, 185, 129, 0.5);"></div>
+        <span style="color:var(--neon-green); font-size:13px;">Online</span>
+      </div>
+    </div>
+    <div style="display:flex; gap:24px; height:500px;">
+      <!-- Chat Contacts -->
+      <div style="width:280px; background:var(--bg-dark); border-radius:16px; border:1px solid var(--border-color); overflow:hidden;">
+        <div style="padding:16px; border-bottom:1px solid var(--border-color);">
+          <input type="text" placeholder="Search contacts..." style="width:100%; background:var(--bg-card-hover); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:var(--text-primary); font-size:13px;">
+        </div>
+        <div style="overflow-y:auto; max-height:420px;">
+          <div class="chat-contact active" style="padding:16px; border-bottom:1px solid var(--border-color); cursor:pointer; background:rgba(0, 240, 255, 0.1);">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; background:linear-gradient(135deg, var(--neon-blue) 0%, #8b5cf6 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; color:#fff;">A</div>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:var(--text-primary); font-size:14px;">Admin Support</div>
+                <div style="color:var(--text-secondary); font-size:12px; margin-top:2px;">How can I help you today?</div>
+              </div>
+              <div style="width:8px; height:8px; background:var(--neon-green); border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="chat-contact" style="padding:16px; border-bottom:1px solid var(--border-color); cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; background:linear-gradient(135deg, var(--neon-green) 0%, #059669 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; color:#fff;">M</div>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:var(--text-primary); font-size:14px;">Mechanic - Raj</div>
+                <div style="color:var(--text-secondary); font-size:12px; margin-top:2px;">Service in progress...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chat Messages -->
+      <div style="flex:1; display:flex; flex-direction:column; background:var(--bg-dark); border-radius:16px; border:1px solid var(--border-color); overflow:hidden;">
+        <div id="adminChatMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="align-self:flex-start; max-width:70%;">
+            <div style="background:var(--bg-card-hover); padding:12px 16px; border-radius:16px 16px 16px 4px; border:1px solid var(--border-color);">
+              <div style="color:var(--text-primary); font-size:14px;">Hello! Welcome to Smart Car Service. How can I assist you today?</div>
+            </div>
+            <div style="color:var(--text-secondary); font-size:11px; margin-top:4px;">Admin • 10:00 AM</div>
+          </div>
+        </div>
+        <div style="padding:16px; border-top:1px solid var(--border-color); background:var(--bg-card);">
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" style="padding:8px 12px;"><i class="fas fa-paperclip"></i></button>
+            <input type="text" id="adminChatInput" placeholder="Type your message..." style="flex:1; background:var(--bg-dark); border:1px solid var(--border-color); border-radius:8px; padding:10px 16px; color:var(--text-primary); font-size:14px;" onkeypress="if(event.key==='Enter') sendAdminMessage()">
+            <button class="btn btn-primary btn-sm" onclick="sendAdminMessage()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="reviewOverlay">
-  <div class="card">
-    <button class="closeBtn" id="closeReviewBtn">×</button>
+<!-- Review Overlay -->
+<div class="overlay" id="reviewOverlay">
+  <div class="overlay-card">
+    <button class="overlay-close" id="closeReviewBtn"><i class="fas fa-times"></i></button>
     <div id="overlayContent"></div>
   </div>
 </div>
 
-<footer>&copy; 2025 Smart Car Service. All rights reserved.</footer>
+<!-- Notification -->
+<div class="notification" id="notificationBox"></div>
 
 <script>
 const token = localStorage.getItem("token");
-if(!token){ alert("Please login first!"); window.location.href="/login.html"; }
+if(!token){ window.location.href="/login.html"; }
 
-let canNavigate=false;
+let userBookings = [];
+
 const sections={
   home:document.getElementById("homeSection"),
+  diagnostics:document.getElementById("diagnosticsSection"),
   profile:document.getElementById("profileSection"),
   bookings:document.getElementById("bookingsSection"),
   loyalty:document.getElementById("loyaltySection"),
-  admin:document.getElementById("adminMsgSection"),
-  offers:document.getElementById("offersSection"),
   reviews:document.getElementById("reviewsSection"),
-  analytics:document.getElementById("analyticsSection")
+  chat:document.getElementById("chatSection"),
+  analytics:document.getElementById("analyticsSection"),
+  digitalKey:document.getElementById("digitalKeySection")
 };
 
+// Navigation
 function hideAllSections(){ Object.values(sections).forEach(s=>s.classList.add("hidden")); }
-function safeNav(fn){ if(canNavigate) fn(); else alert("Please submit your last service review first."); }
+function setActiveNav(linkId){ document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active')); document.getElementById(linkId)?.classList.add('active'); }
 
-document.getElementById("homeLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.home.classList.remove("hidden"); });
-document.getElementById("profileLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.profile.classList.remove("hidden"); fetchUserProfile(); });
-document.getElementById("myBookingsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.bookings.classList.remove("hidden"); fetchUserBookings(); });
-document.getElementById("loyaltyLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.loyalty.classList.remove("hidden"); fetchUserProfile(); });
-document.getElementById("adminMsgLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.admin.classList.remove("hidden"); fetchAdminMessages(); });
-document.getElementById("offersLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.offers.classList.remove("hidden"); displayOffers(sampleOffers); });
-document.getElementById("reviewsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.reviews.classList.remove("hidden"); fetchReviews(); });
-document.getElementById("analyticsLink").onclick = ()=>safeNav(()=>{ hideAllSections(); sections.analytics.classList.remove("hidden"); fetchBookingAnalytics(); });
+document.getElementById("homeLink").onclick = ()=>{ hideAllSections(); sections.home.classList.remove("hidden"); setActiveNav('homeLink'); };
+document.getElementById("diagnosticsLink").onclick = ()=>{ hideAllSections(); sections.diagnostics.classList.remove("hidden"); setActiveNav('diagnosticsLink'); };
+document.getElementById("profileLink").onclick = ()=>{ hideAllSections(); sections.profile.classList.remove("hidden"); setActiveNav('profileLink'); fetchUserProfile(); };
+document.getElementById("myBookingsLink").onclick = ()=>{ hideAllSections(); sections.bookings.classList.remove("hidden"); setActiveNav('myBookingsLink'); fetchUserBookings(); };
+document.getElementById("loyaltyLink").onclick = ()=>{ hideAllSections(); sections.loyalty.classList.remove("hidden"); setActiveNav('loyaltyLink'); fetchUserProfile(); };
+document.getElementById("reviewsLink").onclick = ()=>{ hideAllSections(); sections.reviews.classList.remove("hidden"); setActiveNav('reviewsLink'); fetchReviews(); };
+document.getElementById("chatLink").onclick = ()=>{ hideAllSections(); sections.chat.classList.remove("hidden"); setActiveNav('chatLink'); };
+document.getElementById("analyticsLink").onclick = ()=>{ 
+  hideAllSections(); 
+  sections.analytics.classList.remove("hidden"); 
+  setActiveNav('analyticsLink'); 
+  setTimeout(() => fetchBookingAnalytics(), 500); 
+};
+document.getElementById("digitalKeyLink").onclick = ()=>{ hideAllSections(); sections.digitalKey.classList.remove("hidden"); setActiveNav('digitalKeyLink'); };
 document.getElementById("logoutBtn").onclick = ()=>{ localStorage.removeItem("token"); window.location.href="/login.html"; };
-document.getElementById("closeReviewBtn").onclick=()=>{ document.getElementById("reviewOverlay").style.display="none"; canNavigate=true; };
+document.getElementById("closeReviewBtn").onclick=()=>{ document.getElementById("reviewOverlay").classList.remove("active"); };
 
-// --- Profile Upload & Preview ---
+// Run Diagnostics Function
+function runDiagnostics(){
+  showNotification("Running vehicle diagnostics...", "success");
+  setTimeout(() => {
+    showNotification("Diagnostics complete! Vehicle health: 94%", "success");
+  }, 2000);
+}
+
+// Vehicle Selector
+document.getElementById("vehicleSelect").addEventListener("change", function(e){
+  const vehicle = e.target.value;
+  const vehicleImages = {
+    honda: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80",
+    toyota: "https://images.unsplash.com/photo-1623869675781-80aa31012a5a?w=800&q=80",
+    maruti: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80",
+    hyundai: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80",
+    tata: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80"
+  };
+  const vehicleNames = {
+    honda: "Honda City",
+    toyota: "Toyota Innova",
+    maruti: "Maruti Swift",
+    hyundai: "Hyundai Creta",
+    tata: "Tata Nexon"
+  };
+  const vehicleSpecs = {
+    honda: "2023 Model • 45,000 km",
+    toyota: "2022 Model • 62,000 km",
+    maruti: "2024 Model • 28,000 km",
+    hyundai: "2023 Model • 52,000 km",
+    tata: "2024 Model • 38,000 km"
+  };
+  
+  const img = document.querySelector("#homeSection img");
+  if(img && vehicleImages[vehicle]){
+    img.src = vehicleImages[vehicle];
+    img.alt = vehicleNames[vehicle];
+  }
+  
+  const nameEl = document.querySelector("#homeSection .absolute div:first-child");
+  const specsEl = document.querySelector("#homeSection .absolute div:last-child");
+  if(nameEl) nameEl.textContent = vehicleNames[vehicle];
+  if(specsEl) specsEl.textContent = vehicleSpecs[vehicle];
+});
+
+// Digital Key Functions
+function toggleDigitalKey(){
+  if(confirm("Are you sure you want to revoke digital key access? This will disable all remote access features.")){
+    showNotification("Digital key access revoked", "error");
+  }
+}
+
+function generateAccessCode(){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for(let i = 0; i < 4; i++){
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  code += '-';
+  for(let i = 0; i < 4; i++){
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  showNotification("New access code generated: " + code, "success");
+}
+
+function shareAccessCode(){
+  if(navigator.share){
+    navigator.share({
+      title: 'Digital Key Access Code',
+      text: 'Your temporary access code is: 8X4K-9M2N',
+    }).catch(console.error);
+  } else {
+    navigator.clipboard.writeText('8X4K-9M2N');
+    showNotification("Access code copied to clipboard", "success");
+  }
+}
+
+// Mechanic Chat Function
+function sendMechanicMessage(){
+  const input = document.getElementById("mechanicChatInput");
+  const message = input.value.trim();
+  if(!message) return;
+  
+  const chatMessages = document.getElementById("mechanicChatMessages");
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  
+  // Add user message
+  const userMsgDiv = document.createElement("div");
+  userMsgDiv.style.marginBottom = "8px";
+  userMsgDiv.innerHTML = `
+    <div style="background:rgba(0, 240, 255, 0.2); padding:8px 12px; border-radius:8px; display:inline-block; max-width:80%; font-size:13px; color:var(--text-primary); border:1px solid rgba(0, 240, 255, 0.3);">
+      ${message}
+    </div>
+    <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">You • ${time}</div>
+  `;
+  chatMessages.appendChild(userMsgDiv);
+  
+  // Clear input
+  input.value = "";
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Simulate mechanic response
+  setTimeout(() => {
+    const responses = [
+      "Got it, thanks for the update!",
+      "Understood. I'll take care of that.",
+      "Thanks for letting me know. Proceeding with the service.",
+      "Acknowledged. Will update you shortly."
+    ];
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    const mechanicMsgDiv = document.createElement("div");
+    mechanicMsgDiv.style.marginBottom = "8px";
+    mechanicMsgDiv.innerHTML = `
+      <div style="background:var(--bg-card-hover); padding:8px 12px; border-radius:8px; display:inline-block; max-width:80%; font-size:13px; color:var(--text-primary);">
+        ${randomResponse}
+      </div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Mechanic • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+    `;
+    chatMessages.appendChild(mechanicMsgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }, 1500);
+}
+
+// Admin Chat Function
+function sendAdminMessage(){
+  const input = document.getElementById("adminChatInput");
+  const message = input.value.trim();
+  if(!message) return;
+  
+  const chatMessages = document.getElementById("adminChatMessages");
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  
+  // Add user message
+  const userMsgDiv = document.createElement("div");
+  userMsgDiv.style.alignSelf = "flex-end";
+  userMsgDiv.style.maxWidth = "70%";
+  userMsgDiv.innerHTML = `
+    <div style="background:rgba(0, 240, 255, 0.2); padding:12px 16px; border-radius:16px 16px 4px 16px; border:1px solid rgba(0, 240, 255, 0.3);">
+      <div style="color:var(--text-primary); font-size:14px;">${message}</div>
+    </div>
+    <div style="color:var(--text-secondary); font-size:11px; margin-top:4px; text-align:right;">You • ${time}</div>
+  `;
+  chatMessages.appendChild(userMsgDiv);
+  
+  // Clear input
+  input.value = "";
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Simulate admin response
+  setTimeout(() => {
+    const responses = [
+      "Thank you for your message. I'll look into that right away.",
+      "I understand your concern. Let me check the details for you.",
+      "Thanks for reaching out! I'll assist you with this.",
+      "Got it! I'm processing your request now."
+    ];
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    const adminMsgDiv = document.createElement("div");
+    adminMsgDiv.style.alignSelf = "flex-start";
+    adminMsgDiv.style.maxWidth = "70%";
+    adminMsgDiv.innerHTML = `
+      <div style="background:var(--bg-card-hover); padding:12px 16px; border-radius:16px 16px 16px 4px; border:1px solid var(--border-color);">
+        <div style="color:var(--text-primary); font-size:14px;">${randomResponse}</div>
+      </div>
+      <div style="color:var(--text-secondary); font-size:11px; margin-top:4px;">Admin • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+    `;
+    chatMessages.appendChild(adminMsgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }, 1500);
+}
+
+// Profile Picture Upload
 const profilePicInput = document.getElementById("profilePicInput");
-const profilePicImg = document.getElementById("profilePic");
-const uploadPicBtn = document.getElementById("uploadPicBtn");
-const removePicBtn = document.getElementById("removePicBtn");
-
-// Preview selected image
 profilePicInput.addEventListener("change", function(e){
   const file = e.target.files[0];
   if(!file) return;
   if(!file.type.startsWith("image/")) {
-    alert("Please select a valid image file.");
+    showNotification("Please select a valid image file", "error");
     profilePicInput.value = "";
     return;
   }
   const reader = new FileReader();
   reader.onload = function(event){
-    profilePicImg.src = event.target.result;
+    document.getElementById("profilePic").src = event.target.result;
+    uploadProfilePic(file);
   };
   reader.readAsDataURL(file);
 });
 
-// Upload to backend
-uploadPicBtn.addEventListener("click", async () => {
-  const file = profilePicInput.files[0];
-  if(!file) return alert("Please select a profile image first.");
+async function uploadProfilePic(file){
   const formData = new FormData();
   formData.append("profilePic", file);
   try {
@@ -214,325 +1058,443 @@ uploadPicBtn.addEventListener("click", async () => {
     });
     const data = await res.json();
     if(data.success){
-      // Use returned path from server if available
-      if(data.profilePic) profilePicImg.src = data.profilePic;
-      alert("Profile updated!");
+      showNotification("Profile picture updated successfully!", "success");
     } else {
-      alert(data.message || "Upload failed.");
+      showNotification(data.message || "Upload failed", "error");
     }
   } catch(err){
     console.error(err);
-    alert("Upload failed.");
+    showNotification("Upload failed. Please try again.", "error");
   }
-});
+}
 
-// Simple Remove button (client-side only; to actually remove server-side you'd need an endpoint)
-removePicBtn.addEventListener("click", () => {
-  profilePicInput.value = "";
-  profilePicImg.src = "/images/default-avatar.png";
-});
-
-// --- Loyalty ---
+// Update Loyalty Bar
 function updateLoyaltyBar(points){
   const progressBar = document.getElementById("loyaltyProgressBar");
   const loyaltyDisplay = document.getElementById("loyaltyDisplay");
   loyaltyDisplay.innerText = points;
+  document.getElementById("loyaltyPoints").innerText = points;
+  
   const thresholds=[50,100,150,200];
   const nextReward=thresholds.find(t=>t>points)||thresholds[thresholds.length-1];
   const percent=Math.min((points/nextReward)*100,100);
   progressBar.style.width=percent+"%";
-  progressBar.innerText=Math.round(percent)+"%";
   document.getElementById("nextRewardText").innerText=`Next reward at ${nextReward} points`;
 }
 
-// --- Fetch Profile ---
+// Fetch User Profile
 async function fetchUserProfile(){
   try{
     const res = await fetch("/auth/me",{ headers:{ "Authorization":"Bearer "+token }});
     const data = await res.json();
-    if(!data || !data.user) return console.warn("No profile data");
+    if(!data || !data.user) {
+      console.warn("No profile data");
+      return;
+    }
     const user = data.user;
-    // Use server-provided profilePic if available
+    
+    // Update header
+    document.getElementById("headerUsername").innerText = user.username || "User";
+    document.getElementById("headerAvatar").innerText = (user.username || "U").charAt(0).toUpperCase();
+    
+    // Update profile section
+    document.getElementById("profileUsername").innerText = user.username || "N/A";
+    document.getElementById("profileEmail").innerText = user.email || "N/A";
+    document.getElementById("profilePhone").innerText = user.phone || "N/A";
+    document.getElementById("profileBookings").innerText = user.bookingsCount || 0;
+    
+    // Update stats
+    document.getElementById("totalBookings").innerText = user.bookingsCount || 0;
+    document.getElementById("loyaltyPoints").innerText = user.loyaltyPoints || 0;
+    
+    // Update profile pic if available
     if(user.profilePic) document.getElementById("profilePic").src = user.profilePic;
-    document.getElementById("profileInfo").innerHTML=`
-      <div><strong>Name:</strong> ${user.username||"N/A"}</div>
-      <div><strong>Email:</strong> ${user.email||"N/A"}</div>
-      <div><strong>Bookings Made:</strong> ${user.bookingsCount||0}</div>
-      <div><strong>Loyalty Points:</strong> ${user.loyaltyPoints||0}</div>
-    `;
+    
     updateLoyaltyBar(user.loyaltyPoints||0);
-    fetchLatestUserReview();
-  }catch(err){ console.error(err); }
+    fetchUserBookings(); // Also fetch bookings to update stats
+  }catch(err){ 
+    console.error("Profile fetch error:", err);
+    showNotification("Failed to load profile data", "error");
+  }
 }
 
-// --- Fetch Latest Review ---
-async function fetchLatestUserReview(){
-  try{
-    const res = await fetch("/reviews/me",{ headers:{ "Authorization":"Bearer "+token }});
-    const data = await res.json();
-    const container = document.getElementById("userLatestReview");
-    if(!data.success || !data.reviews || data.reviews.length===0){ container.classList.add("hidden"); return; }
-    const r = data.reviews[0];
-    container.classList.remove("hidden");
-    container.innerHTML=`<h3>Your Latest Review</h3>
-      <p><strong>Car:</strong> ${r.booking?.carModel||"N/A"}</p>
-      <p><strong>Service:</strong> ${r.booking?.serviceType||"N/A"}</p>
-      <p>${"⭐".repeat(r.rating)}</p>
-      <p>${r.comment}</p>`;
-  }catch(err){ console.error(err); }
-}
-
-// --- Fetch Bookings ---
+// Fetch User Bookings
 async function fetchUserBookings(){
   try{
     const res = await fetch("/bookings/user",{ headers:{ "Authorization":"Bearer "+token }});
     const data = await res.json();
     const tbody = document.getElementById("bookingTableBody");
     tbody.innerHTML="";
-    (data.bookings||[]).forEach(b=>{
-      const reviewStatus = b.review ? `
-        <div class="review-box"><p><strong>Your Review:</strong></p>
-        <p>${"⭐".repeat(b.review.rating)}</p><p>${b.review.comment}</p></div>
-        <button class="button" onclick='viewReview(${JSON.stringify(b.review)})'>View Review</button>
-      ` : "Not Reviewed";
-
+    
+    if(!data.success || !data.bookings || data.bookings.length===0){
+      tbody.innerHTML='<tr><td colspan="6" class="empty-state"><i class="fas fa-calendar-times"></i><p>No bookings yet</p></td></tr>';
+      userBookings = [];
+      
+      // Update stats
+      document.getElementById("totalBookings").innerText = "0";
+      document.getElementById("completedBookings").innerText = "0";
+      document.getElementById("pendingBookings").innerText = "0";
+      return;
+    }
+    
+    userBookings = data.bookings;
+    let completed = 0;
+    let pending = 0;
+    
+    data.bookings.forEach(b=>{
+      if(b.status === "Completed") completed++;
+      else pending++;
+      
+      const statusClass = b.status === "Completed" ? "status-completed" : "status-pending";
+      const reviewBtn = b.status === "Completed" && !b.reviewCompleted 
+        ? `<button class="btn btn-primary btn-sm" onclick='openReviewForm("${b._id}")'><i class="fas fa-star"></i> Review</button>`
+        : b.reviewCompleted 
+        ? `<button class="btn btn-secondary btn-sm" onclick='viewReview(${JSON.stringify(b.review)})'><i class="fas fa-eye"></i> View Review</button>`
+        : `<span style="color:#94a3b8; font-size:12px;">-</span>`;
+      
       const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${b._id}</td><td>${b.carModel}</td><td>${b.serviceType}</td>
-        <td>${new Date(b.date).toLocaleDateString()}</td><td>${b.totalAmount||0}</td>
-        <td class="${b.status==="Completed"?"completed":"pending"}">${b.status}</td>
-        <td>${reviewStatus}</td>`;
+      tr.innerHTML=`
+        <td><strong>${b.serviceType}</strong></td>
+        <td>${b.carModel}</td>
+        <td>${new Date(b.date).toLocaleDateString()}</td>
+        <td>₹${b.totalAmount||0}</td>
+        <td><span class="status-badge ${statusClass}">${b.status}</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick='viewBookingDetails("${b._id}")'><i class="fas fa-eye"></i> View</button>
+          ${reviewBtn}
+        </td>
+      `;
       tbody.appendChild(tr);
     });
-    showLastReviewForm(data.bookings||[]);
-  }catch(err){ console.error(err); }
+    
+    // Update stats
+    document.getElementById("totalBookings").innerText = data.bookings.length;
+    document.getElementById("completedBookings").innerText = completed;
+    document.getElementById("pendingBookings").innerText = pending;
+  }catch(err){ 
+    console.error("Bookings fetch error:", err);
+    showNotification("Failed to load bookings", "error");
+  }
 }
 
-// --- Offers ---
-const sampleOffers = [
-  { title: "Seasonal Offers", description: "Get discounts on certain services during this season!" },
-  { title: "Referral Program", description: "Refer a friend and earn points or discounts!" },
-  { title: "Flash Sales", description: "Grab limited-time offers before they expire!" }
-];
-let displayedOffers = new Set();
-function displayOffers(offers){
-  const container = document.getElementById("offersContainer");
-  container.innerHTML = "";
-  offers.forEach(o=>{
+// Open Review Form
+function openReviewForm(bookingId){
+  const overlay=document.getElementById("reviewOverlay");
+  overlay.classList.add("active");
+  document.getElementById("overlayContent").innerHTML=`
+    <h3 style="color:#fff; margin-bottom:16px;">Submit Your Review</h3>
+    <div class="form-group">
+      <label class="form-label">Rating (1-5)</label>
+      <input type="number" id="rating" class="form-input" min="1" max="5" placeholder="Enter rating">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Review</label>
+      <textarea id="comment" class="form-textarea" placeholder="Share your experience..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="submitReview('${bookingId}')"><i class="fas fa-paper-plane"></i> Submit Review</button>
+  `;
+}
+
+// Submit Review
+async function submitReview(bookingId){
+  const rating=parseInt(document.getElementById("rating").value);
+  const comment=document.getElementById("comment").value.trim();
+  if(!rating||rating<1||rating>5) return showNotification("Enter valid rating (1-5)", "error");
+  if(!comment) return showNotification("Comment cannot be empty", "error");
+  
+  try{
+    const res=await fetch(`/bookings/${bookingId}/review`,{
+      method:"POST",
+      headers:{ "Authorization":"Bearer "+token, "Content-Type":"application/json" },
+      body:JSON.stringify({ rating, comment })
+    });
+    const data=await res.json();
+    if(!data.success) return showNotification(data.message, "error");
+    
+    document.getElementById("reviewOverlay").classList.remove("active");
+    showNotification("Review submitted successfully!", "success");
+    fetchUserBookings();
+    fetchReviews();
+    fetchUserProfile();
+  }catch(err){ 
+    console.error(err);
+    showNotification("Failed to submit review", "error");
+  }
+}
+
+// View Booking Details
+function viewBookingDetails(bookingId){
+  const booking = userBookings.find(b => b._id === bookingId);
+  if(!booking) return;
+  
+  const overlay = document.getElementById("bookingDetailsOverlay");
+  if(!overlay){
+    // Create overlay if it doesn't exist
     const div = document.createElement("div");
-    div.className = "offer-card";
-    div.innerHTML = `<h4>${o.title}</h4><p>${o.description}</p>`;
-    container.appendChild(div);
-    if(!displayedOffers.has(o.title)){
-      showOfferNotification(o);
-      displayedOffers.add(o.title);
-    }
-  });
-}
-function showOfferNotification(offer){
-  const notif = document.createElement("div");
-  notif.className = "message-box";
-  notif.style.borderLeft = "5px solid #17a2b8";
-  notif.innerHTML = `<strong>New Offer:</strong> ${offer.title}<br>${offer.description}`;
-  document.body.appendChild(notif);
-  setTimeout(()=>{ notif.remove(); }, 5000);
+    div.id = "bookingDetailsOverlay";
+    div.className = "modal-overlay";
+    div.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Booking Details</h3>
+          <button class="modal-close" onclick="closeBookingDetails()">×</button>
+        </div>
+        <div class="modal-body" id="bookingDetailsBody"></div>
+      </div>
+    `;
+    document.body.appendChild(div);
+  }
+  
+  document.getElementById("bookingDetailsBody").innerHTML = `
+    <div class="detail-item">
+      <label>Service Type</label>
+      <div class="detail-value">${booking.serviceType || 'N/A'}</div>
+    </div>
+    <div class="detail-item">
+      <label>Car Model</label>
+      <div class="detail-value">${booking.carModel || 'N/A'}</div>
+    </div>
+    <div class="detail-item">
+      <label>Date</label>
+      <div class="detail-value">${booking.date ? new Date(booking.date).toLocaleDateString() : 'N/A'}</div>
+    </div>
+    <div class="detail-item">
+      <label>Total Amount</label>
+      <div class="detail-value">₹${booking.totalAmount || 0}</div>
+    </div>
+    <div class="detail-item">
+      <label>Status</label>
+      <div class="detail-value">${booking.status || 'Pending'}</div>
+    </div>
+    <div class="detail-item">
+      <label>Payment Method</label>
+      <div class="detail-value">${booking.paymentMethod || 'N/A'}</div>
+    </div>
+    <div class="detail-item">
+      <label>Recurring</label>
+      <div class="detail-value">${booking.recurring || 'none'}</div>
+    </div>
+  `;
+  
+  document.getElementById("bookingDetailsOverlay").classList.add("active");
 }
 
-// --- Reviews ---
+function closeBookingDetails(){
+  const overlay = document.getElementById("bookingDetailsOverlay");
+  if(overlay) overlay.classList.remove("active");
+}
+
+// View Review
+function viewReview(review){
+  const overlay=document.getElementById("reviewOverlay");
+  overlay.classList.add("active");
+  const rating = review.rating || 0;
+  const comment = review.comment || "";
+  document.getElementById("overlayContent").innerHTML=`
+    <h3 style="color:#fff; margin-bottom:16px;">Your Review</h3>
+    <div style="margin-bottom:16px;">
+      <span style="color:#fbbf24; font-size:24px;">${"⭐".repeat(rating)}</span>
+    </div>
+    <p style="color:#94a3b8; line-height:1.6;">${comment}</p>
+  `;
+}
+
+// Fetch Reviews
 async function fetchReviews(){
   try{
     const res = await fetch("/reviews",{ headers:{ "Authorization":"Bearer "+token }});
     const data = await res.json();
     const container = document.getElementById("reviewsContainer");
     container.innerHTML = "";
+    
     if(!data.success || !data.reviews || data.reviews.length===0){
-      container.innerHTML = "<p>No customer reviews yet.</p>";
+      container.innerHTML='<div class="empty-state"><i class="fas fa-comments"></i><p>No reviews yet</p></div>';
       return;
     }
+    
     const sortedReviews = data.reviews.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
     sortedReviews.forEach(r=>{
-      const customerName = r.customerName || r.user?.username || "Anonymous";
-      const carModel = r.booking?.carModel || r.carModel || "N/A";
-      const serviceType = r.booking?.serviceType || r.serviceType || "N/A";
+      const customerName = r.customerName || "Anonymous";
       const rating = r.review?.rating || r.rating || 0;
       const comment = r.review?.comment || r.comment || "";
+      const serviceType = r.serviceType || "Service";
+      const carModel = r.carModel || "";
+      const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "";
       const div = document.createElement("div");
       div.className="review-card";
-      div.innerHTML=`<h4>${customerName}</h4>
-        <p><strong>Car:</strong> ${carModel}</p>
-        <p><strong>Service:</strong> ${serviceType}</p>
-        <p>${"⭐".repeat(rating)}</p>
-        <p>${comment}</p>`;
+      div.innerHTML=`
+        <div class="review-header">
+          <div class="review-avatar">${customerName.charAt(0).toUpperCase()}</div>
+          <div class="review-info">
+            <div class="review-name">${customerName}</div>
+            <div class="review-service">${serviceType}${carModel ? ` • ${carModel}` : ''}</div>
+            <div class="review-date">${date}</div>
+          </div>
+        </div>
+        <div class="review-stars">${"⭐".repeat(rating)}</div>
+        <div class="review-text">${comment}</div>
+      `;
       container.appendChild(div);
     });
-  }catch(err){ console.error(err); }
+  }catch(err){ 
+    console.error("Reviews fetch error:", err);
+    showNotification("Failed to load reviews", "error");
+  }
 }
 
-// --- Review Overlay ---
-function showLastReviewForm(bookings){
-  const lastCompleted = (bookings||[]).filter(b=>b.status==="Completed" && !b.review)
-    .sort((a,b)=> new Date(b.date)-new Date(a.date))[0];
-  if(!lastCompleted){ canNavigate=true; return; }
-
-  canNavigate=false;
-  const overlay=document.getElementById("reviewOverlay");
-  overlay.style.display="flex";
-  document.getElementById("overlayContent").innerHTML=`
-    <h3>Review Your Last Completed Service</h3>
-    <p><strong>Booking ID:</strong> ${lastCompleted._id}</p>
-    <p><strong>Car Model:</strong> ${lastCompleted.carModel}</p>
-    <p><strong>Service:</strong> ${lastCompleted.serviceType}</p>
-    <p><strong>Date:</strong> ${new Date(lastCompleted.date).toLocaleDateString()}</p>
-    <label for="rating">Rating (1-5):</label>
-    <input type="number" id="rating" min="1" max="5"><br><br>
-    <label for="comment">Comment:</label>
-    <textarea id="comment" rows="3" placeholder="Write your review..."></textarea><br><br>
-    <button id="submitReviewBtn" class="button">Submit Review</button>
-  `;
-  document.getElementById("submitReviewBtn").onclick=async ()=>{
-    const rating=parseInt(document.getElementById("rating").value);
-    const comment=document.getElementById("comment").value.trim();
-    if(!rating||rating<1||rating>5) return alert("Enter valid rating 1-5");
-    if(!comment) return alert("Comment cannot be empty");
-    try{
-      const res=await fetch(`/bookings/${lastCompleted._id}/review`,{
-        method:"POST",
-        headers:{ "Authorization":"Bearer "+token, "Content-Type":"application/json" },
-        body:JSON.stringify({ rating, comment })
-      });
-      const data=await res.json();
-      if(!data.success) return alert(data.message);
-      overlay.style.display="none";
-      canNavigate=true;
-      fetchUserBookings();
-      fetchReviews();
-      fetchUserProfile();
-    }catch(err){ console.error(err); }
-  };
-}
-function viewReview(review){
-  const overlay=document.getElementById("reviewOverlay");
-  overlay.style.display="flex";
-  const carModel = review.booking?.carModel || review.carModel || "N/A";
-  const serviceType = review.booking?.serviceType || review.serviceType || "N/A";
-  const rating = review.rating || review.review?.rating || 0;
-  const comment = review.comment || review.review?.comment || "";
-  document.getElementById("overlayContent").innerHTML=`
-    <h3>View Review</h3>
-    <p><strong>Car:</strong> ${carModel}</p>
-    <p><strong>Service:</strong> ${serviceType}</p>
-    <p>${"⭐".repeat(rating)}</p>
-    <p>${comment}</p>`;
-}
-
-// --- Admin Messages ---
-async function fetchAdminMessages(){
+// Fetch Booking Analytics
+async function fetchBookingAnalytics(){
+  const range = document.getElementById("analyticsRange").value;
+  console.log("Fetching analytics for range:", range);
+  
+  const revenueCanvas = document.getElementById('revenueChart');
+  const statusCanvas = document.getElementById('serviceStatusChart');
+  const servicesCanvas = document.getElementById('topServicesChart');
+  
+  if(!revenueCanvas || !statusCanvas || !servicesCanvas){
+    console.error("Canvas elements not found");
+    return;
+  }
+  
   try{
-    const res = await fetch("/admin/messages",{ headers:{ "Authorization":"Bearer "+token }});
+    const res = await fetch(`/bookings/analytics?range=${range}`,{ headers:{ "Authorization":"Bearer "+token }});
     const data = await res.json();
-    const container=document.getElementById("adminMessages");
-    container.innerHTML="";
-    if(!data.success || !data.messages || data.messages.length===0) container.innerHTML="<p>No messages.</p>";
-    (data.messages||[]).forEach(m=>{
-      const div=document.createElement("div");
-      div.className="message-box";
-      div.innerHTML=`<p>${m.message}</p><small>${new Date(m.createdAt).toLocaleString()}</small>`;
-      container.appendChild(div);
-    });
-    showNotification("You have new admin messages!");
-  }catch(err){ console.error(err); }
-}
-
-// --- Live Clock ---
-function updateClock(){
-  const now = new Date();
-  document.getElementById("liveClock").innerText = now.toLocaleTimeString();
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// --- Notification ---
-function showNotification(message){
-  const box = document.getElementById("notificationBox");
-  box.innerText = message;
-  box.style.display = "block";
-  setTimeout(()=>{ box.style.display="none"; }, 4000);
-}
-
-// --- Booking Analytics (with range option) ---
-async function fetchBookingAnalytics(range = 'monthly'){
-  try{
-    // your backend analytics endpoint - adjust if your route differs
-    const res = await fetch("/analytics?range="+encodeURIComponent(range),{ headers:{ "Authorization":"Bearer "+token }});
-    const data = await res.json();
-
-    // Backwards-compat fallback if endpoint returns different shape
-    // Expecting data like { success:true, revenue: [{label:.., amount:..},...], completed: n, pending: m, topServices: [{service, count}] }
-    const revenueData = data.revenue || (data.revenueChart || []);
-    const completed = data.completed || data.completedCount || 0;
-    const pending = data.pending || data.pendingCount || 0;
-    const topServices = data.topServices || data.top_services || [];
-
-    // Revenue chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    if(window.revenueChart) window.revenueChart.destroy();
+    
+    if(!data.success) {
+      console.error("Analytics error:", data.message);
+      return;
+    }
+    
+    const revenueData = data.revenue || [];
+    const completed = data.completed || 0;
+    const pending = data.pending || 0;
+    const topServices = data.topServices || [];
+    
+    // Recreate canvases to ensure proper rendering
+    const recreateCanvas = (canvasId) => {
+      const canvas = document.getElementById(canvasId);
+      const parent = canvas.parentNode;
+      const newCanvas = canvas.cloneNode(true);
+      parent.removeChild(canvas);
+      parent.appendChild(newCanvas);
+      return newCanvas;
+    };
+    
+    const newRevenueCanvas = recreateCanvas('revenueChart');
+    const newStatusCanvas = recreateCanvas('serviceStatusChart');
+    const newServicesCanvas = recreateCanvas('topServicesChart');
+    
+    // Revenue Chart
+    const revenueCtx = newRevenueCanvas.getContext('2d');
     window.revenueChart = new Chart(revenueCtx, {
       type:'line',
       data:{
-        labels: (revenueData||[]).map(r => r.label || r.month || r.week || r.year || ''),
+        labels: revenueData.map(r => r.label || ''),
         datasets:[{
           label:'Revenue',
-          data: (revenueData||[]).map(r => r.amount || r.value || 0),
+          data: revenueData.map(r => r.amount || 0),
           fill:true,
-          backgroundColor:'rgba(0,123,255,0.15)',
-          borderColor:'#007bff',
-          tension: 0.2
+          backgroundColor:'rgba(0, 240, 255, 0.1)',
+          borderColor:'#00F0FF',
+          tension: 0.4,
+          pointBackgroundColor:'#00F0FF',
+          pointBorderColor:'#fff',
+          pointBorderWidth:2,
+          pointRadius:4
         }]
       },
-      options:{ responsive:true, plugins:{ legend:{ display:true } } }
+      options:{ 
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ 
+          legend:{ display:false },
+          title:{ display:true, text:'Revenue Over Time', color: '#e2e8f0' }
+        },
+        scales:{
+          x:{ ticks:{ color: '#94a3b8' }, grid:{ color: '#2a2a3a' } },
+          y:{ ticks:{ color: '#94a3b8' }, grid:{ color: '#2a2a3a' } }
+        }
+      }
     });
-
-    // Status chart
-    const statusCtx = document.getElementById('serviceStatusChart').getContext('2d');
-    if(window.statusChart) window.statusChart.destroy();
+    
+    // Status Chart
+    const statusCtx = newStatusCanvas.getContext('2d');
     window.statusChart = new Chart(statusCtx, {
       type:'doughnut',
       data:{
         labels:['Completed','Pending'],
-        datasets:[{ data:[completed,pending], backgroundColor:['#28a745','#ff4d4d'] }]
+        datasets:[{ 
+          data:[completed,pending], 
+          backgroundColor:['#10B981','#EF4444'],
+          borderWidth:0
+        }]
       },
-      options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } }
+      options:{ 
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ 
+          legend:{ position:'bottom', labels:{ color: '#94a3b8' } },
+          title:{ display:true, text:'Service Status', color: '#e2e8f0' }
+        }
+      }
     });
-
-    // Top services
-    const topCtx = document.getElementById('topServicesChart').getContext('2d');
-    if(window.topServicesChart) window.topServicesChart.destroy();
-    window.topServicesChart = new Chart(topCtx, {
+    
+    // Top Services Chart
+    const servicesCtx = newServicesCanvas.getContext('2d');
+    window.topServicesChart = new Chart(servicesCtx, {
       type:'bar',
       data:{
-        labels: (topServices||[]).map(s => s.service || s.serviceType || s.serviceName || s._id || 'Service'),
-        datasets:[{ label:'Number of Services', data:(topServices||[]).map(s => s.count || s.total || 0), backgroundColor:'#17a2b8' }]
+        labels: topServices.map(s => s.serviceType || s.service || 'Service'),
+        datasets:[{ 
+          label:'Bookings',
+          data:topServices.map(s => s.count || 0), 
+          backgroundColor:'rgba(139, 92, 246, 0.8)',
+          borderColor:'#8b5cf6',
+          borderWidth:2,
+          borderRadius:8
+        }]
       },
-      options:{ responsive:true, scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ display:false } } }
+      options:{ 
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ 
+          legend:{ display:false },
+          title:{ display:true, text:'Top Services', color: '#e2e8f0' }
+        },
+        scales:{
+          x:{ ticks:{ color: '#94a3b8' }, grid:{ display:false } },
+          y:{ ticks:{ color: '#94a3b8' }, grid:{ color: '#2a2a3a' }, beginAtZero:true }
+        }
+      }
     });
-
-  }catch(err){ console.error('Analytics error:', err); }
+    
+  }catch(err){ 
+    console.error('Analytics error:', err);
+    showNotification("Failed to load analytics", "error");
+  }
 }
 
-// Support the range selector and refresh button
-const analyticsRange = document.getElementById('analyticsRange');
-const refreshAnalyticsBtn = document.getElementById('refreshAnalyticsBtn');
-refreshAnalyticsBtn.addEventListener('click', ()=> {
-  const range = analyticsRange.value;
-  fetchBookingAnalytics(range);
-});
+// Live Clock
+function updateClock(){
+  const now = new Date();
+  document.getElementById("liveClock").innerHTML = `<i class="far fa-clock"></i> ${now.toLocaleTimeString()}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-// Also fetch analytics when analytics tab is opened via nav (handled earlier by analyticsLink)
+// Notification
+function showNotification(message, type = 'success'){
+  const box = document.getElementById("notificationBox");
+  box.innerText = message;
+  box.className = 'notification ' + type;
+  box.style.display = 'block';
+  setTimeout(()=>{ box.style.display = 'none'; }, 4000);
+}
 
-// --- Initialize ---
+// Initialize
 hideAllSections();
 sections.home.classList.remove("hidden");
 fetchUserProfile();
-fetchUserBookings();
 </script>
 </body>
 </html>

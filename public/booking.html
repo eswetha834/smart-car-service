@@ -2,72 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Booking Page</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Service - Smart Car Service</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-body { font-family: Arial; margin:20px; background:#eef2f7; }
-.container { max-width:600px; margin:auto; background:#fff; padding:25px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
-h2 { text-align:center; color:#333; }
-input, select, button { width:100%; padding:12px; margin:10px 0; border-radius:6px; border:1px solid #ccc; font-size:16px; }
-input:focus, select:focus { border-color:#007bff; outline:none; }
-button { cursor:pointer; font-weight:bold; transition:0.3s; }
-#proceedPay { display:none; margin-bottom:10px; border:none; color:#fff; }
-#submitBtn { background:#007bff; color:#fff; border:none; }
-#submitBtn:hover { background:#0056b3; }
-#message { margin-top:10px; color:red; text-align:center; font-weight:bold; }
-label { font-weight:bold; display:block; margin-top:10px; }
-#totalAmount { font-weight:bold; text-align:center; margin:10px 0; color:#007bff; display:none; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter', sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  
+  .booking-container { max-width:700px; margin:40px auto; padding:20px; }
+  
+  .booking-header { text-align:center; margin-bottom:32px; }
+  .booking-header h1 { font-size:28px; font-weight:700; color:#fff; margin-bottom:8px; }
+  .booking-header p { color:#94a3b8; font-size:14px; }
+  
+  .booking-card { background:linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-radius:16px; padding:32px; border:1px solid #334155; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); margin-bottom:24px; }
+  
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; }
+  
+  .form-group { margin-bottom:20px; }
+  .form-label { display:block; font-size:14px; color:#94a3b8; margin-bottom:8px; font-weight:500; }
+  .form-input, .form-select { width:100%; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px 16px; color:#e2e8f0; font-size:15px; transition:all 0.3s ease; cursor:pointer; }
+  .form-input:focus, .form-select:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59, 130, 246, 0.1); }
+  .form-input::placeholder { color:#64748b; }
+  
+  .btn { width:100%; padding:14px; border-radius:10px; font-weight:600; font-size:15px; cursor:pointer; transition:all 0.3s ease; border:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-primary { background:linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color:#fff; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(59, 130, 246, 0.4); }
+  .btn-paypal { background:#ffc439; color:#000; }
+  .btn-razorpay { background:#007bff; color:#fff; }
+  .btn-paytm { background:#ff8c00; color:#fff; }
+  .btn-gpay { background:#34a853; color:#fff; }
+  
+  .price-card { background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius:12px; padding:20px; margin-top:24px; color:#fff; }
+  .price-row { display:flex; justify-content:space-between; margin-bottom:12px; }
+  .price-row:last-child { margin-bottom:0; }
+  .price-label { opacity:0.9; }
+  .price-value { font-weight:700; font-size:18px; }
+  .total-price { border-top:1px solid rgba(255,255,255,0.3); padding-top:16px; margin-top:16px; }
+  
+  .coupon-section { background:#0f172a; border-radius:12px; padding:20px; margin-top:20px; border:1px solid #334155; }
+  .coupon-input-group { display:flex; gap:12px; }
+  
+  #message { margin-top:16px; padding:12px; border-radius:8px; text-align:center; font-weight:500; display:none; }
+  #message.success { background:rgba(16, 185, 129, 0.1); color:#10b981; border:1px solid #10b981; }
+  #message.error { background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; }
+  
+  .hidden { display:none; }
+  
+  .back-link { display:inline-flex; align-items:center; gap:8px; color:#94a3b8; text-decoration:none; margin-bottom:20px; font-size:14px; }
+  .back-link:hover { color:#3b82f6; }
 </style>
 </head>
 <body>
 
-<div class="container">
-<h2>Book a Service</h2>
-<form id="bookingForm">
-  <input type="text" name="customerName" placeholder="Your Name" required>
-  <input type="email" name="email" placeholder="Your Email">
-  <input type="text" name="phone" placeholder="Phone Number" maxlength="10" pattern="\d{10}" required>
-
-  <label>Car Model:</label>
-  <select name="carModel" id="carModel" required>
-    <option value="">Loading cars...</option>
-  </select>
-
-  <label>Service Type:</label>
-  <select name="serviceType" id="serviceType" required>
-    <option value="">Loading services...</option>
-  </select>
-
-  <label>Recurring Service:</label>
-  <select name="recurring" id="recurring">
-    <option value="none">One-time</option>
-    <option value="monthly">Monthly</option>
-    <option value="quarterly">Quarterly</option>
-  </select>
-
-  <input type="text" id="datePicker" name="date" placeholder="Select Date" required>
-
-  <label>Payment Method:</label>
-  <select name="paymentMethod" id="paymentMethod" required>
-    <option value="">Select Payment</option>
-    <option value="paypal">PayPal</option>
-    <option value="razorpay">Razorpay</option>
-    <option value="paytm">Paytm</option>
-    <option value="gpay">Google Pay</option>
-    <option value="cod">Cash on Delivery</option>
-  </select>
-<div class="card">
-  <h3>Apply Coupon</h3>
-  <input type="text" id="couponCode" placeholder="Enter coupon code">
-  <button class="button" id="applyCouponBtn">Apply</button>
-  <p id="discountInfo">Discount: ₹0</p>
-  <h4>Total Amount: ₹<span id="totalAmount">0</span></h4>
-</div>
-
-  <button type="button" id="proceedPay">Proceed to Pay</button>
-  <button type="submit" id="submitBtn">Submit Booking</button>
-</form>
-<div id="message"></div>
+<div class="booking-container">
+  <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+  
+  <div class="booking-header">
+    <h1><i class="fas fa-calendar-plus" style="margin-right:12px; color:#3b82f6;"></i>Book a Service</h1>
+    <p>Schedule your car service appointment</p>
+  </div>
+  
+  <div class="booking-card">
+    <form id="bookingForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Customer Name</label>
+          <input type="text" name="customerName" class="form-input" placeholder="Enter your name" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-input" placeholder="Enter your email">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="text" name="phone" class="form-input" placeholder="10-digit number" maxlength="10" pattern="\d{10}" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Car Model</label>
+          <select name="carModel" id="carModel" class="form-select" required>
+            <option value="">Select Car Model</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Service Type</label>
+          <select name="serviceType" id="serviceType" class="form-select" required>
+            <option value="">Select Service</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Recurring Service</label>
+          <select name="recurring" id="recurring" class="form-select">
+            <option value="none">One-time</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Preferred Date</label>
+        <input type="text" id="datePicker" name="date" class="form-input" placeholder="Select date" required>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <select name="paymentMethod" id="paymentMethod" class="form-select" required>
+          <option value="">Select Payment Method</option>
+          <option value="paypal">PayPal</option>
+          <option value="razorpay">Razorpay</option>
+          <option value="paytm">Paytm</option>
+          <option value="gpay">Google Pay</option>
+          <option value="cod">Cash on Delivery</option>
+        </select>
+      </div>
+      
+      <div class="coupon-section">
+        <label class="form-label"><i class="fas fa-tag" style="margin-right:8px;"></i>Apply Coupon Code</label>
+        <div class="coupon-input-group">
+          <input type="text" id="couponCode" class="form-input" placeholder="Enter coupon code">
+          <button type="button" id="applyCouponBtn" class="btn btn-primary" style="width:auto; padding:14px 24px;">Apply</button>
+        </div>
+        <p id="discountInfo" style="margin-top:12px; color:#10b981; font-size:14px;">Discount: ₹0</p>
+      </div>
+      
+      <div class="price-card">
+        <div class="price-row">
+          <span class="price-label">Service Price</span>
+          <span class="price-value" id="servicePrice">₹0</span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">Car Multiplier</span>
+          <span class="price-value" id="carMultiplier">1x</span>
+        </div>
+        <div class="price-row total-price">
+          <span class="price-label">Total Amount</span>
+          <span class="price-value" id="totalAmount">₹0</span>
+        </div>
+      </div>
+      
+      <button type="button" id="proceedPay" class="btn hidden" style="margin-top:20px;">Proceed to Pay</button>
+      <button type="submit" id="submitBtn" class="btn btn-primary" style="margin-top:12px;">
+        <i class="fas fa-check-circle"></i> Submit Booking
+      </button>
+    </form>
+    
+    <div id="message"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -268,11 +356,17 @@ function calculateTotal(){
 
 function updateTotalDisplay(){
   const total = calculateTotal();
+  const selectedCar = carModelSelect.selectedOptions[0];
+  const selectedService = serviceTypeSelect.selectedOptions[0];
+  
+  document.getElementById("servicePrice").innerText = "₹" + (selectedService?.dataset.price || 0);
+  document.getElementById("carMultiplier").innerText = (selectedCar?.dataset.multiplier || 1) + "x";
+  document.getElementById("totalAmount").innerText = "₹" + total;
+  
   if(paymentSelect.value === "cod"){
-    totalAmountDiv.style.display = "block";
-    totalAmountDiv.innerText = "Total Amount: ₹" + total;
+    document.getElementById("totalAmount").style.display = "block";
   } else {
-    totalAmountDiv.style.display = "none";
+    document.getElementById("totalAmount").style.display = "block";
   }
 }
 
@@ -283,14 +377,15 @@ paymentSelect.addEventListener("change", updateTotalDisplay);
 // ---------------- Payment Button ----------------
 document.getElementById("paymentMethod").addEventListener("change", e=>{
   const proceedBtn=document.getElementById("proceedPay");
-  proceedBtn.style.display="none";
+  proceedBtn.classList.add("hidden");
+  proceedBtn.className = "btn hidden";
   switch(e.target.value){
-    case "paypal": proceedBtn.style.display="block"; proceedBtn.style.background="#ffc439"; proceedBtn.innerText="Proceed with PayPal"; break;
-    case "razorpay": proceedBtn.style.display="block"; proceedBtn.style.background="#007bff"; proceedBtn.innerText="Proceed with Razorpay"; break;
-    case "paytm": proceedBtn.style.display="block"; proceedBtn.style.background="#ff8c00"; proceedBtn.innerText="Proceed with Paytm"; break;
-    case "gpay": proceedBtn.style.display="block"; proceedBtn.style.background="#34a853"; proceedBtn.innerText="Proceed with Google Pay"; break;
-    case "cod": proceedBtn.style.display="none"; updateTotalDisplay(); break;
-    default: proceedBtn.style.display="none"; break;
+    case "paypal": proceedBtn.classList.remove("hidden"); proceedBtn.classList.add("btn-paypal"); proceedBtn.innerHTML='<i class="fab fa-paypal"></i> Proceed with PayPal'; break;
+    case "razorpay": proceedBtn.classList.remove("hidden"); proceedBtn.classList.add("btn-razorpay"); proceedBtn.innerHTML='<i class="fas fa-credit-card"></i> Proceed with Razorpay'; break;
+    case "paytm": proceedBtn.classList.remove("hidden"); proceedBtn.classList.add("btn-paytm"); proceedBtn.innerHTML='<i class="fas fa-mobile-alt"></i> Proceed with Paytm'; break;
+    case "gpay": proceedBtn.classList.remove("hidden"); proceedBtn.classList.add("btn-gpay"); proceedBtn.innerHTML='<i class="fab fa-google"></i> Proceed with Google Pay'; break;
+    case "cod": proceedBtn.classList.add("hidden"); updateTotalDisplay(); break;
+    default: proceedBtn.classList.add("hidden"); break;
   }
 });
 
@@ -303,10 +398,8 @@ async function submitBooking(data){
       body: JSON.stringify(data)
     });
     const result = await res.json();
-    document.getElementById("message").innerText = result.message || "Booking submitted";
     if(result.success){
-      alert("Booking submitted successfully!");
-      // update fully booked dates locally (if date returned blocked by API you may re-fetch)
+      showMessage("Booking submitted successfully!", "success");
       if(fpInstance && data.date){
         const current = fpInstance.config.disable || [];
         if(!current.includes(data.date)) {
@@ -314,11 +407,15 @@ async function submitBooking(data){
         }
       }
       document.getElementById("bookingForm").reset();
-      totalAmountDiv.style.display="none";
+      document.getElementById("totalAmount").innerText = "₹0";
+      document.getElementById("servicePrice").innerText = "₹0";
+      document.getElementById("carMultiplier").innerText = "1x";
+    } else {
+      showMessage(result.message || "Booking failed", "error");
     }
   } catch(err){
     console.error(err);
-    document.getElementById("message").innerText="Server error";
+    showMessage("Server error. Please try again.", "error");
   }
 }
 
@@ -344,6 +441,15 @@ document.getElementById("bookingForm").addEventListener("submit", async e=>{
   };
   await submitBooking(bookingData);
 });
+
+// ---------------- Show Message ----------------
+function showMessage(text, type){
+  const msg = document.getElementById("message");
+  msg.innerText = text;
+  msg.className = type;
+  msg.style.display = "block";
+  setTimeout(() => { msg.style.display = "none"; }, 5000);
+}
 // ---------------- Load Cars ----------------
 async function loadCars(){
   try {

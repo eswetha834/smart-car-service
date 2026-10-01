@@ -351,7 +351,7 @@ app.get("/reviews", verifyToken, async (req, res) => {
     const reviews = await Booking.find({
       reviewCompleted: true,
     })
-      .select("customerName review _id")
+      .select("customerName review _id serviceType carModel createdAt")
       .lean();
     res.json({ success: true, reviews });
   } catch (err) {
@@ -387,6 +387,34 @@ app.post(
   }
 );
 
+app.put(
+  "/admin/bookings/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const booking = await Booking.findById(req.params.id);
+      if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+      const { customerName, email, phone, carModel, serviceType, date, totalAmount, status } = req.body;
+      
+      booking.customerName = customerName || booking.customerName;
+      booking.email = email || booking.email;
+      booking.phone = phone || booking.phone;
+      booking.carModel = carModel || booking.carModel;
+      booking.serviceType = serviceType || booking.serviceType;
+      booking.date = date || booking.date;
+      booking.totalAmount = totalAmount !== undefined ? totalAmount : booking.totalAmount;
+      booking.status = status || booking.status;
+
+      await booking.save();
+      res.json({ success: true, message: "Booking updated successfully" });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  }
+);
+
 app.post(
   "/admin/bookings/:id/message",
   verifyToken,
@@ -409,7 +437,7 @@ app.post(
   }
 );
 
-// ---------------- Admin Booking Delete with Warning ----------------
+// ---------------- Admin Booking Delete ----------------
 app.delete(
   "/admin/bookings/:id",
   verifyToken,
@@ -422,26 +450,15 @@ app.delete(
           .status(404)
           .json({ success: false, message: "Booking not found" });
 
-      // ⚠️ Warning: This action is permanent
-      if (req.query.confirm !== "true") {
-        return res.json({
-          success: false,
-          message:
-            "⚠️ Warning: Deleting this booking is permanent. Add ?confirm=true to the request to confirm.",
-        });
-      }
-
       await Booking.deleteOne({ _id: req.params.id });
       res.json({ success: true, message: "Booking deleted successfully" });
     } catch (err) {
-      res
-        .status(500)
-        .json({ success: false, message: "Server error while deleting booking" });
+      res.status(500).json({ message: "Server error", error: err.message });
     }
   }
 );
 
-// ---------------- Admin Service Delete with Warning ----------------
+// ... (rest of the code remains the same)
 app.delete("/admin/services/:id", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
@@ -582,7 +599,9 @@ app.use((req,res,next)=>{
 app.get("/bookings/analytics", verifyToken, async (req, res) => {
   try {
     const range = req.query.range || "6months"; // default range
-    const bookings = await Booking.find().lean();
+    // For regular users, only fetch their own bookings
+    const bookingFilter = req.user.role === "admin" ? {} : { userId: req.user.id };
+    const bookings = await Booking.find(bookingFilter).lean();
     const now = new Date();
 
     let revenue = [];
